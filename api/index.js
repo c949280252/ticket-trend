@@ -170,19 +170,23 @@ app.get('/api/update', async (req, res) => {
   const r = await fetch(config.apiUrl)
   const json = await r.json()
   const data = json.result?.data || []
+  
+  // 先清空该彩种数据，重新更新
+  await sql`DELETE FROM lottery_history WHERE lottery_type = ${lotteryType}`
+  
   for (const item of data) {
     await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
       VALUES (${lotteryType}, ${item.preDrawIssue}, ${item.preDrawCode}, ${item.preDrawTime})
       ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
   }
   
-  // 如果有派生彩种，一并更新
+  // 如果有派生彩种，清空并重新生成
   if (config.derive) {
     const deriveConfig = LOTTERY_CONFIG[config.derive]
     if (deriveConfig) {
+      await sql`DELETE FROM lottery_history WHERE lottery_type = ${config.derive}`
       await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
-        SELECT ${config.derive}, issue, LEFT(code, ${deriveConfig.codeLen}), draw_time FROM lottery_history WHERE lottery_type = ${lotteryType}
-        ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code`
+        SELECT ${config.derive}, issue, LEFT(code, ${deriveConfig.codeLen}), draw_time FROM lottery_history WHERE lottery_type = ${lotteryType}`
     }
   }
   
