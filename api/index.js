@@ -1,4 +1,4 @@
-import express from 'express'
+﻿import express from 'express'
 import cors from 'cors'
 import { sql } from '@vercel/postgres'
 
@@ -6,19 +6,18 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-// 调试用
 app.get('/api/debug', async (req, res) => {
-  const result = await sql`SELECT * FROM lottery_history ORDER BY id DESC LIMIT 3`
+  const result = await sql\SELECT * FROM lottery_history ORDER BY id DESC LIMIT 3\
   res.json(result.rows)
 })
 
 async function getFromDB(limit = 30) {
-  const result = await sql`
+  const result = await sql\
     SELECT issue, code, draw_time as date
     FROM lottery_history
     ORDER BY issue DESC
-    LIMIT ${limit}
-  `
+    LIMIT \
+  \
   return result.rows.map(r => ({
     issue: r.issue,
     balls: r.code.split(','),
@@ -33,7 +32,7 @@ app.get('/api/lottery', async (req, res) => {
 
   res.json([{
     id: '3d',
-    name: '福cai3D',
+    name: '福彩3D',
     type: '3d',
     latestIssue: data[0].issue,
     date: data[0].date,
@@ -47,7 +46,7 @@ app.get('/api/lottery/:id', async (req, res) => {
 
   res.json({
     id: '3d',
-    name: '福cai3D',
+    name: '福彩3D',
     type: '3d',
     latest: data[0],
     prize: [
