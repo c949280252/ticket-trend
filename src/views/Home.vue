@@ -52,7 +52,6 @@ const goDetail = (id) => {
 
 onMounted(() => {
   fetchData()
-  // 每5秒轮询更新
   timer = setInterval(fetchData, 5000)
 })
 
