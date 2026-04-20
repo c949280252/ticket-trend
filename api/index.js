@@ -154,7 +154,7 @@ function formatBalls(code, codeLen) {
 
 // 调试：查看数据库状态
 app.get('/api/debug', async (req, res) => {
-  const history = await sql`SELECT * FROM lottery_history ORDER BY id DESC LIMIT 3`
+  const history = await sql`SELECT lottery_type, issue, code, draw_time FROM lottery_history ORDER BY lottery_type, issue DESC LIMIT 20`
   const meta = await sql`SELECT * FROM lottery_meta`
   res.json({ history: history.rows, meta: meta.rows })
 })
