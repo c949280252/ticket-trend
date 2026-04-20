@@ -2,41 +2,44 @@
   <div class="detail">
     <div class="container">
       <div class="back" @click="$router.back()">← 返回</div>
-      <h2>{{ lotteryName }}</h2>
-      <div class="latest-result" v-if="latest">
+
+      <!-- 最新开奖 -->
+      <div class="latest-box" v-if="latest">
         <div class="latest-header">
-          <span>第{{ latest.issue }}期</span>
-          <span>{{ latest.date }}</span>
+          <span class="lottery-name">{{ lotteryName }}</span>
+          <span class="lottery-issue">第{{ latest.issue }}期</span>
         </div>
         <div class="balls">
           <span
             v-for="(ball, index) in latest.balls"
             :key="index"
             class="ball"
-            :class="{ red: lotteryType === 'ssq' || lotteryType === 'dlt', blue: lotteryType === 'dlt' && index >= redCount }"
           >{{ ball }}</span>
         </div>
-        <div class="prize" v-if="latest.prize">
-          <div v-for="(item, index) in latest.prize" :key="index" class="prize-item">
-            <span>{{ item.name }}</span>
-            <span>{{ item.amount }}</span>
+        <div class="lottery-date">{{ formatDate(latest.date) }}</div>
+
+        <!-- 奖池信息 -->
+        <div class="prize-pool" v-if="prizes && prizes.length > 0">
+          <div class="prize-title">开奖公告</div>
+          <div class="prize-list">
+            <div v-for="(p, i) in prizes" :key="i" class="prize-item">
+              <span>{{ p.name }}</span>
+              <span>{{ p.amount }}</span>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- 历史开奖 -->
       <div class="history">
-        <h3>历史开奖</h3>
+        <h3 class="section-title">历史开奖</h3>
         <div class="history-list">
           <div v-for="item in history" :key="item.issue" class="history-item">
             <span class="issue">第{{ item.issue }}期</span>
             <div class="balls">
-              <span
-                v-for="(ball, index) in item.balls"
-                :key="index"
-                class="ball-small"
-                :class="{ red: lotteryType === 'ssq' || lotteryType === 'dlt', blue: lotteryType === 'dlt' && index >= redCount }"
-              >{{ ball }}</span>
+              <span v-for="(ball, i) in item.balls" :key="i" class="ball-small">{{ ball }}</span>
             </div>
-            <span class="date">{{ item.date }}</span>
+            <span class="date">{{ formatDate(item.date) }}</span>
           </div>
         </div>
       </div>
@@ -52,16 +55,10 @@ import axios from 'axios'
 const route = useRoute()
 const lotteryId = route.params.id
 const lotteryName = ref('')
-const lotteryType = ref('')
 const latest = ref(null)
 const history = ref([])
+const prizes = ref([])
 let timer = null
-
-const redCount = computed(() => {
-  if (lotteryType.value === 'ssq') return 6
-  if (lotteryType.value === 'dlt') return 5
-  return 0
-})
 
 const fetchData = async () => {
   try {
@@ -71,13 +68,18 @@ const fetchData = async () => {
     ])
     const data = infoRes.data
     lotteryName.value = data.name
-    lotteryType.value = data.type
     latest.value = data.latest
     history.value = historyRes.data
-    console.log('History:', historyRes.data)
+    prizes.value = data.latest?.prize || []
   } catch (e) {
     console.error(e)
   }
+}
+
+const formatDate = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
 
 onMounted(() => {
@@ -92,95 +94,139 @@ onUnmounted(() => {
 
 <style scoped>
 .detail {
-  padding: 2rem 0;
+  padding: 0.5rem 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 0.75rem;
 }
 
 .back {
   color: #666;
   cursor: pointer;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   font-size: 0.875rem;
 }
 
-.back:hover {
-  color: #1a1a2e;
+.back:active {
+  color: #e63946;
 }
 
-h2 {
-  margin-bottom: 1.5rem;
-}
-
-.latest-result {
+.latest-box {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  text-align: center;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .latest-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
-  color: #666;
+}
+
+.lottery-name {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #e63946;
+}
+
+.lottery-issue {
   font-size: 0.875rem;
+  color: #666;
+  background: #f5f5f5;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
 }
 
 .balls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
 .ball {
-  width: 36px;
-  height: 36px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: bold;
   color: #fff;
+  background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
+  box-shadow: 0 4px 8px rgba(230, 57, 70, 0.3);
 }
 
-.ball.red {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+.lottery-date {
+  font-size: 0.75rem;
+  color: #999;
+  margin-bottom: 1rem;
 }
 
-.ball.blue {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-}
-
-.prize {
-  border-top: 1px solid #eee;
+.prize-pool {
+  border-top: 1px solid #f0f0f0;
   padding-top: 1rem;
 }
 
-.prize-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.25rem 0;
+.prize-title {
   font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 0.5rem;
 }
 
-.history h3 {
+.prize-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.prize-item {
+  background: #f9f9f9;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.prize-item span:first-child {
+  color: #666;
+}
+
+.prize-item span:last-child {
+  color: #e63946;
+  font-weight: 600;
+}
+
+.section-title {
   font-size: 1rem;
-  margin-bottom: 1rem;
+  color: #333;
+  margin-bottom: 0.75rem;
+  padding-left: 0.5rem;
+  border-left: 3px solid #e63946;
 }
 
 .history-list {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .history-item {
   display: flex;
   align-items: center;
-  padding: 1rem;
+  padding: 0.875rem 1rem;
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -189,16 +235,17 @@ h2 {
 }
 
 .history-item .issue {
-  width: 100px;
-  font-size: 0.875rem;
+  width: 90px;
+  font-size: 0.75rem;
   color: #666;
+  flex-shrink: 0;
 }
 
 .history-item .balls {
   flex: 1;
   display: flex;
   gap: 0.25rem;
-  margin-bottom: 0;
+  justify-content: center;
 }
 
 .ball-small {
@@ -209,14 +256,34 @@ h2 {
   align-items: center;
   justify-content: center;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: bold;
   color: #fff;
+  background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
 }
 
 .history-item .date {
-  font-size: 0.75rem;
+  width: 70px;
+  font-size: 0.625rem;
   color: #999;
-  width: 80px;
   text-align: right;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .latest-box {
+    padding: 2rem;
+  }
+
+  .ball {
+    width: 72px;
+    height: 72px;
+    font-size: 2rem;
+  }
+
+  .ball-small {
+    width: 28px;
+    height: 28px;
+    font-size: 0.875rem;
+  }
 }
 </style>

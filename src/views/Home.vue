@@ -1,27 +1,38 @@
 <template>
   <div class="home">
     <div class="container">
-      <h2>常用彩票最新开奖结果</h2>
-      <div v-if="lotteryList.length === 0" class="loading">加载中...</div>
-      <div class="lottery-list" v-else>
+      <!-- 最新开奖 -->
+      <div class="latest-box" v-if="lotteryList.length > 0">
+        <div class="lottery-header">
+          <span class="lottery-name">{{ lotteryList[0].name }}</span>
+          <span class="lottery-issue">第{{ lotteryList[0].latestIssue }}期</span>
+        </div>
+        <div class="balls">
+          <span
+            v-for="(ball, index) in lotteryList[0].balls"
+            :key="index"
+            class="ball"
+          >{{ ball }}</span>
+        </div>
+        <div class="lottery-date">{{ formatDate(lotteryList[0].date) }}</div>
+      </div>
+
+      <!-- 导航列表 -->
+      <div class="nav-list">
         <div
+          class="nav-item"
           v-for="item in lotteryList"
           :key="item.id"
-          class="lottery-card"
           @click="goDetail(item.id)"
         >
-          <div class="lottery-header">
-            <span class="lottery-name">{{ item.name }}</span>
-            <span class="lottery-issue">第{{ item.latestIssue }}期</span>
+          <div class="nav-info">
+            <span class="nav-name">{{ item.name }}</span>
+            <span class="nav-issue">第{{ item.latestIssue }}期</span>
           </div>
-          <div class="lottery-balls">
-            <span
-              v-for="(ball, index) in item.balls"
-              :key="index"
-              class="ball"
-            >{{ ball }}</span>
+          <div class="nav-balls">
+            <span v-for="(ball, i) in item.balls" :key="i" class="ball-small">{{ ball }}</span>
           </div>
-          <div class="lottery-date">{{ item.date }}</div>
+          <span class="arrow">></span>
         </div>
       </div>
     </div>
@@ -46,6 +57,12 @@ const fetchData = async () => {
   }
 }
 
+const formatDate = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+
 const goDetail = (id) => {
   router.push(`/detail/${id}`)
 }
@@ -62,82 +79,151 @@ onUnmounted(() => {
 
 <style scoped>
 .home {
-  padding: 2rem 0;
+  padding: 0.5rem 0;
 }
 
-h2 {
-  margin-bottom: 1.5rem;
-  font-size: 1.25rem;
-  color: #333;
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 0.75rem;
 }
 
-.lottery-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-}
-
-.lottery-card {
+.latest-box {
   background: #fff;
-  border-radius: 8px;
-  padding: 1.25rem;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-
-.lottery-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .lottery-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
 .lottery-name {
-  font-weight: 600;
-  font-size: 1rem;
-  color: #1a1a2e;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #e63946;
 }
 
 .lottery-issue {
-  font-size: 0.75rem;
-  color: #999;
+  font-size: 0.875rem;
+  color: #666;
+  background: #f5f5f5;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
 }
 
-.lottery-balls {
+.balls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .ball {
-  width: 32px;
-  height: 32px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: bold;
   color: #fff;
-}
-
-.ball.red {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-}
-
-.ball.blue {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
+  box-shadow: 0 4px 8px rgba(230, 57, 70, 0.3);
 }
 
 .lottery-date {
   font-size: 0.75rem;
   color: #999;
+}
+
+.nav-list {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.nav-item:last-child {
+  border-bottom: none;
+}
+
+.nav-item:active {
+  background: #f9f9f9;
+}
+
+.nav-info {
+  flex: 1;
+}
+
+.nav-name {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.nav-issue {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.nav-balls {
+  display: flex;
+  gap: 0.25rem;
+  margin-right: 0.5rem;
+}
+
+.ball-small {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
+}
+
+.arrow {
+  color: #ccc;
+  font-size: 1rem;
+}
+
+@media (min-width: 768px) {
+  .latest-box {
+    padding: 2rem;
+  }
+
+  .ball {
+    width: 72px;
+    height: 72px;
+    font-size: 2rem;
+  }
+
+  .ball-small {
+    width: 28px;
+    height: 28px;
+    font-size: 0.875rem;
+  }
 }
 </style>

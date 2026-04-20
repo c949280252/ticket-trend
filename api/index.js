@@ -6,11 +6,10 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-async function getFromDB(lotCode, limit = 30) {
+async function getFromDB(limit = 30) {
   const result = await sql`
     SELECT issue, code, draw_time as date
     FROM lottery_history
-    WHERE lottery_type = ${lotCode}
     ORDER BY draw_time DESC
     LIMIT ${limit}
   `
@@ -22,14 +21,12 @@ async function getFromDB(lotCode, limit = 30) {
 }
 
 app.get('/api/lottery', async (req, res) => {
-  const data = await getFromDB('3d', 1)
-  console.log('Data:', data)
-
+  const data = await getFromDB(1)
   if (data.length === 0) return res.json([])
 
   res.json([{
     id: '3d',
-    name: '福cai 3D',
+    name: '福cai3D',
     type: '3d',
     latestIssue: data[0].issue,
     date: data[0].date,
@@ -38,19 +35,24 @@ app.get('/api/lottery', async (req, res) => {
 })
 
 app.get('/api/lottery/:id', async (req, res) => {
-  const data = await getFromDB('3d', 1)
+  const data = await getFromDB(1)
   if (data.length === 0) return res.status(404).json({ error: 'Not found' })
 
   res.json({
     id: '3d',
-    name: '福cai 3D',
+    name: '福cai3D',
     type: '3d',
-    latest: data[0]
+    latest: data[0],
+    prize: [
+      { name: '单选', amount: '1,040元' },
+      { name: '组三', amount: '346元' },
+      { name: '组六', amount: '173元' }
+    ]
   })
 })
 
 app.get('/api/lottery/:id/history', async (req, res) => {
-  const data = await getFromDB('3d', 30)
+  const data = await getFromDB(30)
   res.json(data)
 })
 
