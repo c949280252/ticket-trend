@@ -85,16 +85,21 @@ app.get('/api/lottery', async (req, res) => {
   if (data.length === 0) return res.json([])
 
   // 返回数据
-  res.json([{ id: '3d', name: '福cai3D', type: '3d', latestIssue: data[0].issue, date: data[0].date, balls: data[0].balls }])
-
-  // 检查是否需要更新
   const latestDate = new Date(data[0].date)
-  if (new Date() - latestDate >= 60000) {
-    const lastFetch = await getLastFetchTime()
-    if (Date.now() - lastFetch >= API_INTERVAL) {
-      await setLastFetchTime(Date.now())
-      backgroundUpdate()
-    }
+  const diff = new Date() - latestDate
+  const needUpdate = diff >= 60000
+  const lastFetch = await getLastFetchTime()
+  const canFetch = Date.now() - lastFetch >= API_INTERVAL
+  
+  res.json([{ 
+    id: '3d', name: '福彩3D', type: '3d', 
+    latestIssue: data[0].issue, date: data[0].date, balls: data[0].balls,
+    _debug: { diff, needUpdate, lastFetch, canFetch }
+  }])
+
+  if (needUpdate && canFetch) {
+    await setLastFetchTime(Date.now())
+    backgroundUpdate()
   }
 })
 
@@ -103,7 +108,7 @@ app.get('/api/lottery/:id', async (req, res) => {
   let data = await getFromDB(1)
   if (data.length === 0) return res.status(404).json({ error: 'Not found' })
 
-  res.json({ id: '3d', name: '福cai3D', type: '3d', latest: data[0], prize: [{ name: '单选', amount: '1,040元' }, { name: '组三', amount: '346元' }, { name: '组六', amount: '173元' }] })
+  res.json({ id: '3d', name: '福彩3D', type: '3d', latest: data[0], prize: [{ name: '单选', amount: '1,040元' }, { name: '组三', amount: '346元' }, { name: '组六', amount: '173元' }] })
 
   const latestDate = new Date(data[0].date)
   if (new Date() - latestDate >= 60000) {
