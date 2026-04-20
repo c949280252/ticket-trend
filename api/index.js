@@ -36,13 +36,25 @@ async function getLastFetchTime(lotteryType) {
   }
 }
 
-// 设置指定彩种上次请求外部API的时间
-async function setLastFetchTime(lotteryType, time) {
-  const key = `last_fetch_${lotteryType}`
+// 批量获取所有彩种的上次请求时间（一次查询）
+async function getAllLastFetchTimes() {
   try {
-    await sql`INSERT INTO lottery_meta (key, value) VALUES (${key}, ${time.toString()})
-      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`
-  } catch {}
+    const result = await sql`SELECT key, value FROM lottery_meta WHERE key LIKE 'last_fetch_%'`
+    const map = {}
+    for (const row of result.rows) {
+      map[row.key] = row.value ? parseInt(row.value) : 0
+    }
+    return map
+  } catch {
+    return {}
+  }
+}
+
+// 设置指定彩种上次请求外部API的时间（不阻塞）
+function setLastFetchTime(lotteryType, time) {
+  const key = `last_fetch_${lotteryType}`
+  sql`INSERT INTO lottery_meta (key, value) VALUES (${key}, ${time.toString()})
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`.catch(() => {})
 }
 
 // 后台静默更新（不等待返回）
@@ -99,6 +111,24 @@ async function getFromDB(lotteryType, limit = 30) {
   const codeLen = config?.codeLen || 10
   const result = await sql`SELECT issue, code, draw_time, created_at FROM lottery_history WHERE lottery_type = ${lotteryType} ORDER BY issue DESC LIMIT ${limit}`
   return result.rows.map(r => ({ issue: r.issue, balls: formatBalls(r.code, codeLen), date: r.draw_time, created_at: r.created_at }))
+}
+
+// 批量获取所有彩种最新数据（一次查询）
+async function getAllLatestData() {
+  const result = await sql`
+    SELECT t.* FROM (
+      SELECT DISTINCT ON (lottery_type) lottery_type, issue, code, draw_time, created_at 
+      FROM lottery_history 
+      ORDER BY lottery_type, issue DESC
+    ) t
+  `
+  const map = {}
+  for (const r of result.rows) {
+    const config = LOTTERY_CONFIG[r.lottery_type]
+    const codeLen = config?.codeLen || 10
+    map[r.lottery_type] = { issue: r.issue, balls: formatBalls(r.code, codeLen), date: r.draw_time, created_at: r.created_at }
+  }
+  return map
 }
 
 // 格式化球号（根据位数分组）
@@ -159,34 +189,26 @@ app.get('/api/update', async (req, res) => {
   res.json({ ok: true, updated: data.length })
 })
 
-// 首页/最新开奖 - 返回所有彩种
-// 逻辑：立即返回数据，后台每个彩种独立5秒防重复更新
+// 首页/最新开奖 - 只返回数据，不触发更新
 app.get('/api/lottery', async (req, res) => {
-  const result = []
+  const allData = await getAllLatestData()
   
+  const result = []
   for (const lotteryType of Object.keys(LOTTERY_CONFIG)) {
     const config = LOTTERY_CONFIG[lotteryType]
     if (!config) continue
     
-    const data = await getFromDB(lotteryType, 1)
-    const lastFetch = await getLastFetchTime(lotteryType)
-    const canFetch = lastFetch === 0 || (Date.now() - lastFetch) >= API_INTERVAL
-    
+    const data = allData[lotteryType]
     result.push({ 
       id: lotteryType, name: config.name, type: lotteryType, 
-      latestIssue: data[0]?.issue || null, date: data[0]?.date || null, balls: data[0]?.balls || []
+      latestIssue: data?.issue || null, date: data?.date || null, balls: data?.balls || []
     })
-    
-    // 后台触发更新（不等待）
-    if (canFetch) {
-      setLastFetchTime(lotteryType, Date.now()).then(() => backgroundUpdate(lotteryType))
-    }
   }
   
   res.json(result)
 })
 
-// 详情页
+// 详情页 - 只返回数据，不触发更新
 app.get('/api/lottery/:id', async (req, res) => {
   const lotteryType = req.params.id
   const config = LOTTERY_CONFIG[lotteryType]
@@ -195,34 +217,20 @@ app.get('/api/lottery/:id', async (req, res) => {
   const data = await getFromDB(lotteryType, 1)
   if (data.length === 0) return res.status(404).json({ error: 'No data, refresh later' })
 
-  const lastFetch = await getLastFetchTime(lotteryType)
-  const canFetch = lastFetch === 0 || (Date.now() - lastFetch) >= API_INTERVAL
-
   res.json({ 
     id: lotteryType, name: config.name, type: lotteryType, 
     latest: data[0], 
     prize: config.prize || []
   })
-
-  if (canFetch) {
-    setLastFetchTime(lotteryType, Date.now()).then(() => backgroundUpdate(lotteryType))
-  }
 })
 
-// 历史记录
+// 历史记录 - 只返回数据，不触发更新
 app.get('/api/lottery/:id/history', async (req, res) => {
   const lotteryType = req.params.id
   if (!LOTTERY_CONFIG[lotteryType]) return res.status(404).json({ error: 'Not found' })
   
   const data = await getFromDB(lotteryType, 30)
-  const lastFetch = await getLastFetchTime(lotteryType)
-  const canFetch = lastFetch === 0 || (Date.now() - lastFetch) >= API_INTERVAL
-
   res.json(data)
-
-  if (canFetch) {
-    setLastFetchTime(lotteryType, Date.now()).then(() => backgroundUpdate(lotteryType))
-  }
 })
 
 export default (req, res) => app(req, res)
