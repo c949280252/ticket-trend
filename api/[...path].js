@@ -6,38 +6,33 @@
 const BACKEND_URL = 'http://38.181.25.184:8880';
 
 export default async function handler(req, res) {
-  // 获取请求路径和方法
-  const path = req.params?.path?.join('/') || '';
+  // 获取请求路径 - 去掉前导的api
+  let path = req.url || '/';
+  path = path.replace(/^\/api\/?/, '');
+  if (path === '/api') path = '';
+  
   const method = req.method;
   
   // 构建后端URL
-  const url = `${BACKEND_URL}/${path}`;
+  const url = path ? `${BACKEND_URL}/${path}` : BACKEND_URL;
   
-  // 复制请求头 (移除Vercel特定的头)
-  const headers = { ...req.headers };
-  delete headers['host'];
-  delete headers['x-vercel-id'];
-  delete headers['x-vercel-deployment-id'];
+  // 复制请求头
+  const headers = {};
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (key !== 'host' && key !== 'x-vercel-id' && key !== 'x-vercel-deployment-id') {
+      headers[key] = value;
+    }
+  }
   
   try {
     const response = await fetch(url, {
       method,
       headers,
       body: method !== 'GET' && method !== 'HEAD' ? req.body : undefined,
-      redirect: 'manual',
-    });
-    
-    // 获取响应头和状态
-    const responseHeaders = {};
-    response.headers.forEach((value, key) => {
-      responseHeaders[key] = value;
     });
     
     // 返回响应
     res.status(response.status);
-    Object.entries(responseHeaders).forEach(([key, value]) => {
-      res.setHeader(key, value);
-    });
     
     const body = await response.text();
     res.send(body);
@@ -49,9 +44,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
