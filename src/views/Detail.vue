@@ -39,7 +39,7 @@
             <div class="balls">
               <span v-for="(ball, i) in item.balls" :key="i" class="ball-small">{{ ball }}</span>
             </div>
-            <span class="date">{{ formatDate(item.date) }}</span>
+            <span class="date">{{ typeof item.date === 'string' ? item.date.split('T')[0] : item.date }}</span>
           </div>
         </div>
       </div>
@@ -78,8 +78,8 @@ const fetchData = async () => {
 
 const formatDate = (date) => {
   if (!date) return ''
-  const d = new Date(date)
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  // 只取日期部分，不转时区
+  return typeof date === 'string' ? date.split('T')[0] : date
 }
 
 onMounted(() => {

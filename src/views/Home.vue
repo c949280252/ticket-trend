@@ -59,8 +59,8 @@ const fetchData = async () => {
 
 const formatDate = (date) => {
   if (!date) return ''
-  const d = new Date(date)
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+  // 只取日期部分，不转时区
+  return date.split('T')[0]
 }
 
 const goDetail = (id) => {
