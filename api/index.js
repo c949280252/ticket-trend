@@ -9,6 +9,9 @@ app.use(express.json())
 // ========== 配置 ==========
 const API_INTERVAL = 5000 // 5秒内不重复请求外部API
 
+// 跟踪pending请求，避免重复请求
+const pendingFetch = new Map() // { lotteryType: timestamp }
+
 // 彩种配置
 const LOTTERY_CONFIG = {
   '3d': { name: '福彩3D', apiUrl: 'https://api.api68.com/QuanGuoCai/getLotteryInfoList.do?lotCode=10041', codeLen: 3, prize: [{ name: '单选', amount: '1,040元' }, { name: '组三', amount: '346元' }, { name: '组六', amount: '173元' }] },
@@ -47,11 +50,19 @@ function backgroundUpdate(lotteryType) {
   const config = LOTTERY_CONFIG[lotteryType]
   if (!config) return
 
+  // 检查是否已经有pending的请求超过5秒还没返回
+  const pendingTime = pendingFetch.get(lotteryType)
+  if (pendingTime && Date.now() - pendingTime < API_INTERVAL) {
+    return // 5秒内的请求还没返回，跳过
+  }
+  pendingFetch.set(lotteryType, Date.now())
+
   // 派生彩种（如排列三）从排列五取数据
   if (config.from) {
     sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
       SELECT ${lotteryType}, issue, LEFT(code, ${config.codeLen}), draw_time FROM lottery_history WHERE lottery_type = ${config.from}
       ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code`.catch(() => {})
+    pendingFetch.delete(lotteryType)
     return
   }
 
@@ -74,6 +85,9 @@ function backgroundUpdate(lotteryType) {
         }
       }
     }).catch(() => {})
+    .finally(() => {
+      pendingFetch.delete(lotteryType)
+    })
 }
 
 // 初始化meta表
@@ -81,13 +95,29 @@ sql`CREATE TABLE IF NOT EXISTS lottery_meta (key VARCHAR(50) PRIMARY KEY, value 
 
 // ========== 查询数据库 ==========
 async function getFromDB(lotteryType, limit = 30) {
+  const config = LOTTERY_CONFIG[lotteryType]
+  const codeLen = config?.codeLen || 10
   const result = await sql`SELECT issue, code, draw_time, created_at FROM lottery_history WHERE lottery_type = ${lotteryType} ORDER BY issue DESC LIMIT ${limit}`
-  return result.rows.map(r => ({ issue: r.issue, balls: formatBalls(r.code), date: r.draw_time, created_at: r.created_at }))
+  return result.rows.map(r => ({ issue: r.issue, balls: formatBalls(r.code, codeLen), date: r.draw_time, created_at: r.created_at }))
 }
 
 // 格式化球号（根据位数分组）
-function formatBalls(code) {
-  return code.split('').filter(c => c.trim())
+function formatBalls(code, codeLen) {
+  if (!code) return []
+  // 先尝试逗号分隔
+  if (code.includes(',')) {
+    return code.split(',').map(s => s.trim()).filter(s => s)
+  }
+  // 再尝试空格分隔
+  if (code.includes(' ')) {
+    return code.split(' ').map(s => s.trim()).filter(s => s)
+  }
+  // 最后按固定长度截取
+  const result = []
+  for (let i = 0; i < code.length && i < codeLen; i++) {
+    if (code[i] >= '0' && code[i] <= '9') result.push(code[i])
+  }
+  return result
 }
 
 // ========== API 接口 ==========
@@ -130,34 +160,26 @@ app.get('/api/update', async (req, res) => {
 })
 
 // 首页/最新开奖 - 返回所有彩种
-// 逻辑：
-// 1. 立即返回数据库数据（用户秒开）
-// 2. 每个彩种独立5秒防重复
+// 逻辑：立即返回数据，后台每个彩种独立5秒防重复更新
 app.get('/api/lottery', async (req, res) => {
   const result = []
   
-  // 遍历所有彩种
   for (const lotteryType of Object.keys(LOTTERY_CONFIG)) {
     const config = LOTTERY_CONFIG[lotteryType]
     if (!config) continue
     
-    let data = await getFromDB(lotteryType, 1)
-    if (data.length === 0) {
-      result.push({ id: lotteryType, name: config.name, type: lotteryType, latestIssue: null, date: null, balls: [] })
-      continue
-    }
-
+    const data = await getFromDB(lotteryType, 1)
     const lastFetch = await getLastFetchTime(lotteryType)
     const canFetch = lastFetch === 0 || (Date.now() - lastFetch) >= API_INTERVAL
     
     result.push({ 
       id: lotteryType, name: config.name, type: lotteryType, 
-      latestIssue: data[0].issue, date: data[0].date, balls: data[0].balls
+      latestIssue: data[0]?.issue || null, date: data[0]?.date || null, balls: data[0]?.balls || []
     })
-
+    
+    // 后台触发更新（不等待）
     if (canFetch) {
-      await setLastFetchTime(lotteryType, Date.now())
-      backgroundUpdate(lotteryType)
+      setLastFetchTime(lotteryType, Date.now()).then(() => backgroundUpdate(lotteryType))
     }
   }
   
@@ -170,8 +192,8 @@ app.get('/api/lottery/:id', async (req, res) => {
   const config = LOTTERY_CONFIG[lotteryType]
   if (!config) return res.status(404).json({ error: 'Not found' })
   
-  let data = await getFromDB(lotteryType, 1)
-  if (data.length === 0) return res.status(404).json({ error: 'No data for this lottery type' })
+  const data = await getFromDB(lotteryType, 1)
+  if (data.length === 0) return res.status(404).json({ error: 'No data, refresh later' })
 
   const lastFetch = await getLastFetchTime(lotteryType)
   const canFetch = lastFetch === 0 || (Date.now() - lastFetch) >= API_INTERVAL
@@ -183,15 +205,24 @@ app.get('/api/lottery/:id', async (req, res) => {
   })
 
   if (canFetch) {
-    await setLastFetchTime(lotteryType, Date.now())
-    backgroundUpdate(lotteryType)
+    setLastFetchTime(lotteryType, Date.now()).then(() => backgroundUpdate(lotteryType))
   }
 })
 
 // 历史记录
 app.get('/api/lottery/:id/history', async (req, res) => {
   const lotteryType = req.params.id
-  res.json(await getFromDB(lotteryType, 30))
+  if (!LOTTERY_CONFIG[lotteryType]) return res.status(404).json({ error: 'Not found' })
+  
+  const data = await getFromDB(lotteryType, 30)
+  const lastFetch = await getLastFetchTime(lotteryType)
+  const canFetch = lastFetch === 0 || (Date.now() - lastFetch) >= API_INTERVAL
+
+  res.json(data)
+
+  if (canFetch) {
+    setLastFetchTime(lotteryType, Date.now()).then(() => backgroundUpdate(lotteryType))
+  }
 })
 
 export default (req, res) => app(req, res)
