@@ -2,7 +2,8 @@
   <div class="home">
     <div class="container">
       <h2>常用彩票最新开奖结果</h2>
-      <div class="lottery-list">
+      <div v-if="lotteryList.length === 0" class="loading">加载中...</div>
+      <div class="lottery-list" v-else>
         <div
           v-for="item in lotteryList"
           :key="item.id"
