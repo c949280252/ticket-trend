@@ -1,0 +1,172 @@
+/* 需要放到文件最上面 */
+@import '@/uni_modules/uni-scss/variables.scss';
+
+/*
+ 以下变量是默认值，如不需要修改可以不用给下面的变量重新赋值
+ */
+// 主色
+$uni-primary: #2979ff;
+$uni-primary-disable:mix(#fff,$uni-primary,50%);
+$uni-primary-light: mix(#fff,$uni-primary,80%);
+
+// 辅助色
+// 除了主色外的场景色，需要在不同的场景中使用（例如危险色表示危险的操作）。
+$uni-success: #18bc37;
+$uni-success-disable:mix(#fff,$uni-success,50%);
+$uni-success-light: mix(#fff,$uni-success,80%);
+
+$uni-warning: #f3a73f;
+$uni-warning-disable:mix(#fff,$uni-warning,50%);
+$uni-warning-light: mix(#fff,$uni-warning,80%);
+
+$uni-error: #e43d33;
+$uni-error-disable:mix(#fff,$uni-error,50%);
+$uni-error-light: mix(#fff,$uni-error,80%);
+
+$uni-info: #8f939c;
+$uni-info-disable:mix(#fff,$uni-info,50%);
+$uni-info-light: mix(#fff,$uni-info,80%);
+
+// 中性色
+// 中性色用于文本、背景和边框颜色。通过运用不同的中性色，来表现层次结构。
+$uni-main-color: #3a3a3a; 			// 主要文字
+$uni-base-color: #6a6a6a;			// 常规文字
+$uni-secondary-color: #909399;	// 次要文字
+$uni-extra-color: #c7c7c7;			// 辅助说明
+
+// 边框颜色
+$uni-border-1: #F0F0F0;
+$uni-border-2: #EDEDED;
+$uni-border-3: #DCDCDC;
+$uni-border-4: #B9B9B9;
+
+// 常规色
+$uni-black: #000000;
+$uni-white: #ffffff;
+$uni-transparent: rgba($color: #000000, $alpha: 0);
+
+// 背景色
+$uni-bg-color: #f7f7f7;
+
+/* 水平间距 */
+$uni-spacing-sm: 8px;
+$uni-spacing-base: 15px;
+$uni-spacing-lg: 30px;
+
+// 阴影
+$uni-shadow-sm:0 0 5px rgba($color: #d8d8d8, $alpha: 0.5);
+$uni-shadow-base:0 1px 8px 1px rgba($color: #a5a5a5, $alpha: 0.2);
+$uni-shadow-lg:0px 1px 10px 2px rgba($color: #a5a4a4, $alpha: 0.5);
+
+// 蒙版
+$uni-mask: rgba($color: #000000, $alpha: 0.4);
+
+
+@for $i from 0 through 1000 {
+  .ml-#{$i} {
+    margin-left: 1rpx * $i !important;
+  }
+  .ml_#{$i} {
+    margin-left: -1rpx * $i !important;
+  }
+
+  .mr-#{$i} {
+    margin-right: 1rpx * $i !important;
+  }
+  .mr_#{$i} {
+    margin-right: -1rpx * $i !important;
+  }
+
+  .mt-#{$i} {
+    margin-top: 1rpx * $i !important;
+  }
+  .mt_#{$i} {
+    margin-top: -1rpx * $i !important;
+  }
+
+  .mb-#{$i} {
+    margin-bottom: 1rpx * $i !important;
+  }
+  .mb_#{$i} {
+    margin-bottom: -1rpx * $i !important;
+  }
+
+  .m-#{$i} {
+    margin: 1rpx * $i !important;
+  }
+
+  .pl-#{$i} {
+    padding-left: 1rpx * $i !important;
+  }
+  .pr-#{$i} {
+    padding-right: 1rpx * $i !important;
+  }
+  .pt-#{$i} {
+    padding-top: 1rpx * $i !important;
+  }
+  .pb-#{$i} {
+    padding-bottom: 1rpx * $i !important;
+  }
+  .p-#{$i} {
+    padding: 1rpx * $i !important;
+  }
+
+  .l-#{$i} {
+    left: 1rpx * $i !important;
+  }
+  .r-#{$i} {
+    right: 1rpx * $i !important;
+  }
+  .t-#{$i} {
+    top: 1rpx * $i !important;
+  }
+  .b-#{$i} {
+    bottom: 1rpx * $i !important;
+  }
+
+  .l_#{$i} {
+    left: -1rpx * $i !important;
+  }
+  .r_#{$i} {
+    right: -1rpx * $i !important;
+  }
+  .t_#{$i} {
+    top: -1rpx * $i !important;
+  }
+  .b_#{$i} {
+    bottom: -1rpx * $i !important;
+  }
+
+  .br-#{$i} {
+    overflow: hidden;
+    border-radius: 1rpx * $i !important;
+  }
+  .w_#{$i} {
+    width: 1% * $i !important;
+  }
+
+  .lh-#{$i} {
+    line-height: 1rpx * $i !important;
+  }
+}
+
+@for $i from 1 through 1000 {
+  .w-#{$i} {
+    width: 1rpx * $i !important;
+  }
+  .mw-#{$i} {
+    min-width: 1rpx * $i !important;
+  }
+  .h-#{$i} {
+    height: 1rpx * $i !important;
+  }
+  .mh-#{$i} {
+    min-height: 1rpx * $i !important;
+  }
+}
+
+@for $i from 12 through 160 {
+  .f-#{$i} {
+    font-size: 1rpx * $i;
+  }
+}
