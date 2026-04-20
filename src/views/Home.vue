@@ -29,12 +29,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 const router = useRouter()
 const lotteryList = ref([])
+let timer = null
 
 const fetchData = async () => {
   try {
@@ -51,6 +52,12 @@ const goDetail = (id) => {
 
 onMounted(() => {
   fetchData()
+  // 每5秒轮询更新
+  timer = setInterval(fetchData, 5000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
 })
 </script>
 

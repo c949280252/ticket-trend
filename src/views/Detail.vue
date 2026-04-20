@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
@@ -55,6 +55,7 @@ const lotteryName = ref('')
 const lotteryType = ref('')
 const latest = ref(null)
 const history = ref([])
+let timer = null
 
 const redCount = computed(() => {
   if (lotteryType.value === 'ssq') return 6
@@ -80,6 +81,12 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData()
+  // 每5秒轮询更新
+  timer = setInterval(fetchData, 5000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
 })
 </script>
 
