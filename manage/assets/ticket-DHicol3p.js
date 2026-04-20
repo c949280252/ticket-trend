@@ -1,1 +1,0 @@
-import{U as e,r as s}from"./index-CN0-O7tx.js";function o(){return e({url:"/home/ticket/list",method:"get"})}function l(t){return e({url:"/home/resultModule/result/list",method:"get",params:t})}const r=s([]),u=async()=>{try{const{rows:t}=await o();r.value=t}catch(t){console.log(t)}};export{u as g,l as h,r as t};

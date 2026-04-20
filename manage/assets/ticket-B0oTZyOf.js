@@ -1,1 +1,0 @@
-import{U as e,r as o}from"./index-DhudVJua.js";function s(){return e({url:"/home/ticket/list",method:"get"})}function u(t){return e({url:"/home/resultModule/result/list",method:"get",params:t})}function c(t){return e({url:"/home/ticket/"+t,method:"get"})}const r=o([]),l=async()=>{try{const{rows:t}=await s();r.value=t}catch(t){console.log(t)}};export{c as a,l as g,u as h,r as t};

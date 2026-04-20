@@ -1,1 +1,0 @@
-import{U as t}from"./index-CKUVoMbU.js";function e(s){return t({url:"/system/browse/list",method:"post",data:s})}function o(s){return t({url:"/system/browse/ipList",method:"post",data:s})}export{o as a,e as b};
