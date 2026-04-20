@@ -15,11 +15,11 @@
             <span class="lottery-issue">第{{ item.latestIssue }}期</span>
           </div>
           <div class="lottery-balls">
+            {{ item.balls }}
             <span
               v-for="(ball, index) in item.balls"
               :key="index"
               class="ball"
-              :class="{ red: item.type === 'ssq' || item.type === 'dlt', blue: item.type === 'dlt' && index >= item.redCount }"
             >{{ ball }}</span>
           </div>
           <div class="lottery-date">{{ item.date }}</div>
