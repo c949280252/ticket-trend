@@ -41,12 +41,22 @@ sql`CREATE TABLE IF NOT EXISTS lottery_meta (key VARCHAR(50) PRIMARY KEY, value 
 
 app.get('/api/debug', async (req, res) => {
   const result = await sql`SELECT * FROM lottery_history ORDER BY id DESC LIMIT 3`
-  res.json(result.rows)
+  const meta = await sql`SELECT * FROM lottery_meta`
+  res.json({ history: result.rows, meta: meta.rows })
 })
 
 app.get('/api/update', async (req, res) => {
   await setLastFetchTime(0)
-  res.json({ ok: true })
+  const r = await fetch('https://api.api68.com/QuanGuoCai/getLotteryInfoList.do?lotCode=10041')
+  const json = await r.json()
+  const data = json.result?.data || []
+  for (const item of data) {
+    await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
+      VALUES ('3d', ${item.preDrawIssue}, ${item.preDrawCode}, ${item.preDrawTime})
+      ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
+  }
+  await setLastFetchTime(Date.now())
+  res.json({ ok: true, updated: data.length })
 })
 
 async function getFromDB(limit = 30) {
