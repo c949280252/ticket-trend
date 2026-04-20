@@ -63,11 +63,10 @@ const redCount = computed(() => {
   return 0
 })
 
-const fetchData = async (isFirst = false) => {
+const fetchData = async () => {
   try {
-    const detailUrl = isFirst ? `/api/lottery/${lotteryId}?first=1` : `/api/lottery/${lotteryId}`
     const [infoRes, historyRes] = await Promise.all([
-      axios.get(detailUrl),
+      axios.get(`/api/lottery/${lotteryId}`),
       axios.get(`/api/lottery/${lotteryId}/history`)
     ])
     const data = infoRes.data
@@ -75,14 +74,15 @@ const fetchData = async (isFirst = false) => {
     lotteryType.value = data.type
     latest.value = data.latest
     history.value = historyRes.data
+    console.log('History:', historyRes.data)
   } catch (e) {
     console.error(e)
   }
 }
 
 onMounted(() => {
-  fetchData(true)  // 首次强制请求
-  timer = setInterval(() => fetchData(false), 5000)
+  fetchData()
+  timer = setInterval(fetchData, 5000)
 })
 
 onUnmounted(() => {

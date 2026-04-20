@@ -15,7 +15,6 @@
             <span class="lottery-issue">第{{ item.latestIssue }}期</span>
           </div>
           <div class="lottery-balls">
-            {{ item.balls }}
             <span
               v-for="(ball, index) in item.balls"
               :key="index"

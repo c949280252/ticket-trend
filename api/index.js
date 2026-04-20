@@ -29,7 +29,7 @@ app.get('/api/lottery', async (req, res) => {
 
   res.json([{
     id: '3d',
-    name: '福cai3D',
+    name: '福cai 3D',
     type: '3d',
     latestIssue: data[0].issue,
     date: data[0].date,
@@ -43,7 +43,7 @@ app.get('/api/lottery/:id', async (req, res) => {
 
   res.json({
     id: '3d',
-    name: '福cai3D',
+    name: '福cai 3D',
     type: '3d',
     latest: data[0]
   })
