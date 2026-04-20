@@ -6,11 +6,17 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
+// 调试用
+app.get('/api/debug', async (req, res) => {
+  const result = await sql`SELECT * FROM lottery_history ORDER BY id DESC LIMIT 3`
+  res.json(result.rows)
+})
+
 async function getFromDB(limit = 30) {
   const result = await sql`
     SELECT issue, code, draw_time as date
     FROM lottery_history
-    ORDER BY draw_time DESC
+    ORDER BY issue DESC
     LIMIT ${limit}
   `
   return result.rows.map(r => ({
@@ -22,6 +28,7 @@ async function getFromDB(limit = 30) {
 
 app.get('/api/lottery', async (req, res) => {
   const data = await getFromDB(1)
+  console.log('data:', data)
   if (data.length === 0) return res.json([])
 
   res.json([{
