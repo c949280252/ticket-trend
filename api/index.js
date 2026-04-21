@@ -78,22 +78,38 @@ app.get('/api/debug', async (req, res) => {
 // 手动触发更新（增量）
 app.get('/api/update', async (req, res) => {
   const lotteryType = req.query.type || '3d'
+  await doUpdate(lotteryType)
+  res.json({ ok: true })
+})
+
+// 定时任务更新所有彩种（异步不等待）
+app.get('/api/cron', async (req, res) => {
+  res.json({ ok: true })
+  
+  // 异步更新，不阻塞返回
+  for (const lotteryType of Object.keys(LOTTERY_CONFIG)) {
+    const config = LOTTERY_CONFIG[lotteryType]
+    if (!config || !config.apiUrl) continue
+    
+    doUpdate(lotteryType).catch(() => {})
+  }
+})
+
+// 更新单个彩种
+async function doUpdate(lotteryType) {
   const config = LOTTERY_CONFIG[lotteryType]
-  if (!config) return res.status(400).json({ error: 'Invalid lottery type' })
-  if (!config.apiUrl) return res.status(400).json({ error: 'No API URL' })
+  if (!config || !config.apiUrl) return
   
   const r = await fetch(config.apiUrl)
   const json = await r.json()
   const data = json.result?.data || []
   
-  // 增量插入（存在则更新）
   for (const item of data) {
     await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
       VALUES (${lotteryType}, ${item.preDrawIssue}, ${item.preDrawCode}, ${item.preDrawTime})
       ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
   }
   
-  // 派生彩种
   if (config.derive) {
     const deriveConfig = LOTTERY_CONFIG[config.derive]
     if (deriveConfig) {
@@ -105,42 +121,7 @@ app.get('/api/update', async (req, res) => {
       }
     }
   }
-  
-  res.json({ ok: true, count: data.length })
-})
-
-// 定时任务更新所有彩种（增量）
-app.get('/api/cron', async (req, res) => {
-  for (const lotteryType of Object.keys(LOTTERY_CONFIG)) {
-    const config = LOTTERY_CONFIG[lotteryType]
-    if (!config || !config.apiUrl) continue
-    
-    const r = await fetch(config.apiUrl)
-    const json = await r.json()
-    const data = json.result?.data || []
-    
-    // 增量插入
-    for (const item of data) {
-      await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
-        VALUES (${lotteryType}, ${item.preDrawIssue}, ${item.preDrawCode}, ${item.preDrawTime})
-        ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
-    }
-    
-    // 派生彩种
-    if (config.derive) {
-      const deriveConfig = LOTTERY_CONFIG[config.derive]
-      if (deriveConfig) {
-        for (const item of data) {
-          const code3 = item.preDrawCode.replace(/,/g, '').slice(0, 3)
-          await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
-            VALUES (${config.derive}, ${item.preDrawIssue}, ${code3}, ${item.preDrawTime})
-            ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code`
-        }
-      }
-    }
-  }
-  res.json({ ok: true })
-})
+}
 
 // 首页/最新开奖 - 只返回数据，不触发更新
 app.get('/api/lottery', async (req, res) => {
