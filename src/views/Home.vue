@@ -69,7 +69,7 @@ const goDetail = (id) => {
 
 onMounted(() => {
   fetchData()
-  timer = setInterval(fetchData, 5000)
+  timer = setInterval(fetchData, 10000)
 })
 
 onUnmounted(() => {
