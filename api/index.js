@@ -82,44 +82,61 @@ app.get('/api/update', async (req, res) => {
   res.json({ ok: true })
 })
 
-// 定时任务更新所有彩种（异步不等待）
+// 定时任务更新所有彩种（间隔执行）
 app.get('/api/cron', async (req, res) => {
-  res.json({ ok: true })
+  const results = []
   
-  // 异步更新，不阻塞返回
   for (const lotteryType of Object.keys(LOTTERY_CONFIG)) {
     const config = LOTTERY_CONFIG[lotteryType]
     if (!config || !config.apiUrl) continue
     
-    doUpdate(lotteryType).catch(() => {})
+    // 每个间隔500ms，避免被限流
+    await new Promise(r => setTimeout(r, 500))
+    const result = await doUpdate(lotteryType)
+    results.push(result)
   }
+  
+  res.json({ ok: true, results })
 })
 
 // 更新单个彩种
 async function doUpdate(lotteryType) {
   const config = LOTTERY_CONFIG[lotteryType]
-  if (!config || !config.apiUrl) return
+  if (!config || !config.apiUrl) return { error: 'No config or apiUrl' }
   
-  const r = await fetch(config.apiUrl)
-  const json = await r.json()
-  const data = json.result?.data || []
-  
-  for (const item of data) {
-    await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
-      VALUES (${lotteryType}, ${item.preDrawIssue}, ${item.preDrawCode}, ${item.preDrawTime})
-      ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
-  }
-  
-  if (config.derive) {
-    const deriveConfig = LOTTERY_CONFIG[config.derive]
-    if (deriveConfig) {
-      for (const item of data) {
-        const code3 = item.preDrawCode.replace(/,/g, '').slice(0, 3)
-        await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
-          VALUES (${config.derive}, ${item.preDrawIssue}, ${code3}, ${item.preDrawTime})
-          ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code`
+  try {
+    const r = await fetch(config.apiUrl)
+    const json = await r.json()
+    const data = json.result?.data || []
+    
+    if (data.length === 0) {
+      return { error: 'No data returned', lotteryType }
+    }
+    
+    let inserted = 0
+    for (const item of data) {
+      await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
+        VALUES (${lotteryType}, ${item.preDrawIssue}, ${item.preDrawCode}, ${item.preDrawTime})
+        ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
+      inserted++
+    }
+    
+    // 派生彩种
+    if (config.derive) {
+      const deriveConfig = LOTTERY_CONFIG[config.derive]
+      if (deriveConfig) {
+        for (const item of data) {
+          const code3 = item.preDrawCode.replace(/,/g, '').slice(0, 3)
+          await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
+            VALUES (${config.derive}, ${item.preDrawIssue}, ${code3}, ${item.preDrawTime})
+            ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code`
+        }
       }
     }
+    
+    return { lotteryType, inserted }
+  } catch (e) {
+    return { error: e.message, lotteryType }
   }
 }
 
