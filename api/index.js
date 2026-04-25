@@ -90,8 +90,8 @@ app.get('/api/cron', async (req, res) => {
     const config = LOTTERY_CONFIG[lotteryType]
     if (!config || !config.apiUrl) continue
     
-    // 每个间隔500ms，避免被限流
-    await new Promise(r => setTimeout(r, 500))
+    // 每个间隔300ms，避免被限流
+    await new Promise(r => setTimeout(r, 300))
     const result = await doUpdate(lotteryType)
     results.push(result)
   }
