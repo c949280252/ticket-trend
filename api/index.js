@@ -82,11 +82,14 @@ app.get('/api/update', async (req, res) => {
   res.json({ ok: true })
 })
 
-// 定时任务更新所有彩种（间隔执行）
+// 定时任务默认只更新这3个主要彩种，其他手动
+const CRON_LOTTERIES = ['3d', 'ssq', 'plw']
+
+// 定时任务更新
 app.get('/api/cron', async (req, res) => {
   const results = []
   
-  for (const lotteryType of Object.keys(LOTTERY_CONFIG)) {
+  for (const lotteryType of CRON_LOTTERIES) {
     const config = LOTTERY_CONFIG[lotteryType]
     if (!config || !config.apiUrl) continue
     
