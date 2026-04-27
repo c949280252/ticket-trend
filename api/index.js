@@ -132,8 +132,9 @@ async function doUpdate(lotteryType) {
     
     let inserted = 0
     for (const item of data) {
-      await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
-        VALUES (${lotteryType}, ${item.preDrawIssue}, ${item.preDrawCode}, ${item.preDrawTime})
+      // draw_time 是开奖时间，用它作为 created_at
+      await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time, created_at)
+        VALUES (${lotteryType}, ${item.preDrawIssue}, ${item.preDrawCode}, ${item.preDrawTime}, ${item.preDrawTime})
         ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
       inserted++
     }
@@ -144,8 +145,8 @@ async function doUpdate(lotteryType) {
       if (deriveConfig) {
         for (const item of data) {
           const code3 = item.preDrawCode.replace(/,/g, '').slice(0, 3)
-          await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
-            VALUES (${config.derive}, ${item.preDrawIssue}, ${code3}, ${item.preDrawTime})
+          await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time, created_at)
+            VALUES (${config.derive}, ${item.preDrawIssue}, ${code3}, ${item.preDrawTime}, ${item.preDrawTime})
             ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code`
         }
       }
