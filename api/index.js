@@ -7,7 +7,7 @@ app.use(cors())
 app.use(express.json())
 
 // ========== 配置 ==========
-// 定时任务每分钟更新，不需要5秒防重复
+const KEEP_DAYS = 30  // 只保留30天数据
 
 // 彩种配置
 const LOTTERY_CONFIG = {
@@ -21,6 +21,11 @@ const LOTTERY_CONFIG = {
 }
 
 // ========== 数据库操作 ==========
+
+// 清理30天前的数据
+async function cleanupOldData() {
+  await sql`DELETE FROM lottery_history WHERE created_at < NOW() - INTERVAL '${KEEP_DAYS} days'`
+}
 
 // ========== 查询数据库 ==========
 async function getFromDB(lotteryType, limit = 30) {
@@ -87,6 +92,9 @@ const CRON_LOTTERIES = ['3d', 'ssq', 'plw']
 
 // 定时任务更新
 app.get('/api/cron', async (req, res) => {
+  // 每次更新时清理旧数据
+  await cleanupOldData()
+  
   const results = []
   
   for (const lotteryType of CRON_LOTTERIES) {
