@@ -7,7 +7,6 @@ app.use(cors())
 app.use(express.json())
 
 // ========== 配置 ==========
-const KEEP_DAYS = 30  // 只保留30天数据
 
 // 彩种配置
 const LOTTERY_CONFIG = {
@@ -22,11 +21,15 @@ const LOTTERY_CONFIG = {
 
 // ========== 数据库操作 ==========
 
-// 清理30天前的数据（只保留最新2000条）
+// 清理数据：每个彩种保留最多2000条
 async function cleanupOldData() {
-  const count = await sql`SELECT COUNT(*) as cnt FROM lottery_history`
-  if (parseInt(count.rows[0].cnt) > 2000) {
-    await sql`DELETE FROM lottery_history WHERE created_at < NOW() - INTERVAL '${KEEP_DAYS} days'`
+  for (const lotteryType of Object.keys(LOTTERY_CONFIG)) {
+    const count = await sql`SELECT COUNT(*) as cnt FROM lottery_history WHERE lottery_type = ${lotteryType}`
+    if (parseInt(count.rows[0].cnt) > 2000) {
+      await sql`DELETE FROM lottery_history WHERE lottery_type = ${lotteryType} AND id NOT IN (
+        SELECT id FROM lottery_history WHERE lottery_type = ${lotteryType} ORDER BY issue DESC LIMIT 2000
+      )`
+    }
   }
 }
 
