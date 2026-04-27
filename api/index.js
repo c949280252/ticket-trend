@@ -5,6 +5,11 @@ import { sql } from '@vercel/postgres'
 // 设置时区为+8
 sql`SET TIMEZONE TO 'Asia/Shanghai'`.catch(() => {})
 
+// 获取当前时间（+8时区）
+function now() {
+  return sql`NOW() AT TIME ZONE 'Asia/Shanghai'`
+}
+
 const app = express()
 app.use(cors())
 app.use(express.json())
@@ -135,9 +140,10 @@ async function doUpdate(lotteryType) {
     
     let inserted = 0
     for (const item of data) {
-      // 使用 draw_time（开奖时间），created_at 让数据库自动生成（记录实际插入时间）
-      await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
-        VALUES (${lotteryType}, ${item.preDrawIssue}, ${item.preDrawCode}, ${item.preDrawTime})
+      // 使用 draw_time（开奖时间），created_at 用带时区的当前时间
+      const currentTime = await sql`NOW() AT TIME ZONE 'Asia/Shanghai'`
+      await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time, created_at)
+        VALUES (${lotteryType}, ${item.preDrawIssue}, ${item.preDrawCode}, ${item.preDrawTime}, ${currentTime.rows[0]})
         ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
       inserted++
     }
@@ -146,10 +152,11 @@ async function doUpdate(lotteryType) {
     if (config.derive) {
       const deriveConfig = LOTTERY_CONFIG[config.derive]
       if (deriveConfig) {
+        const currentTime = await sql`NOW() AT TIME ZONE 'Asia/Shanghai'`
         for (const item of data) {
           const code3 = item.preDrawCode.replace(/,/g, '').slice(0, 3)
-          await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time)
-            VALUES (${config.derive}, ${item.preDrawIssue}, ${code3}, ${item.preDrawTime})
+          await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time, created_at)
+            VALUES (${config.derive}, ${item.preDrawIssue}, ${code3}, ${item.preDrawTime}, ${currentTime.rows[0]})
             ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code`
         }
       }
