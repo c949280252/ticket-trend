@@ -22,9 +22,12 @@ const LOTTERY_CONFIG = {
 
 // ========== 数据库操作 ==========
 
-// 清理30天前的数据
+// 清理30天前的数据（只保留最新2000条）
 async function cleanupOldData() {
-  await sql`DELETE FROM lottery_history WHERE created_at < NOW() - INTERVAL '${KEEP_DAYS} days'`
+  const count = await sql`SELECT COUNT(*) as cnt FROM lottery_history`
+  if (parseInt(count.rows[0].cnt) > 2000) {
+    await sql`DELETE FROM lottery_history WHERE created_at < NOW() - INTERVAL '${KEEP_DAYS} days'`
+  }
 }
 
 // ========== 查询数据库 ==========
