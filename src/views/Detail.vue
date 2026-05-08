@@ -490,7 +490,6 @@ onMounted(() => {
 }
 
 .matrix-header-balls {
-  flex: 1;
   min-width: 50px;
   max-width: 70px;
   font-size: 0.7rem;
@@ -515,11 +514,13 @@ onMounted(() => {
 .matrix-balls {
   display: flex;
   gap: 2px;
-  margin-right: 3px;
+  min-width: 50px;
+  max-width: 70px;
+  justify-content: center;
 }
 
 .matrix-ball {
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #333;
 }
@@ -581,7 +582,6 @@ onMounted(() => {
 }
 
 .matrix-totals-balls {
-  flex: 1;
   min-width: 50px;
   max-width: 70px;
   font-size: 0.7rem;
