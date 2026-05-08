@@ -18,7 +18,7 @@
         <div class="form-row">
           <select v-model="form.lottery_type" @change="onLotteryTypeChange">
             <option value="">选择彩种</option>
-            <option v-for="(config, key) in QUERY_CONFIG" :key="key" :value="key">
+            <option v-for="(config, key) in ADD_CONFIG" :key="key" :value="key">
               {{ config.name }}
             </option>
           </select>
@@ -76,10 +76,11 @@
               <td>{{ item.code }}</td>
               <td>{{ item.draw_time }}</td>
               <td>{{ formatDate(item.created_at) }}</td>
-              <td>
+              <td v-if="item.lottery_type !== 'pl3'">
                 <button @click="handleEdit(item)" class="edit-btn">编辑</button>
                 <button @click="handleDelete(item.id)" class="delete-btn">删除</button>
               </td>
+              <td v-else>-</td>
             </tr>
           </tbody>
         </table>
@@ -175,7 +176,17 @@ const LOTTERY_CONFIG = {
   'qxc': { name: '七星彩', codeLen: 7 }
 }
 
-// 查询用的彩种配置（不包含pl3，因为pl3数据来自plw）
+// 添加表单用的配置（不包含排列三）
+const ADD_CONFIG = {
+  '3d': { name: '福彩3D', codeLen: 3 },
+  'ssq': { name: '双色球', codeLen: 7 },
+  'dlt': { name: '超级大乐透', codeLen: 7 },
+  'qlc': { name: '七乐彩', codeLen: 7 },
+  'plw': { name: '排列五', codeLen: 5 },
+  'qxc': { name: '七星彩', codeLen: 7 }
+}
+
+// 查询用的配置（包含排列三）
 const QUERY_CONFIG = { ...LOTTERY_CONFIG }
 
 const PAGE_SIZE = 20
