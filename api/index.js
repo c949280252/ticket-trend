@@ -71,19 +71,11 @@ function formatBalls(code, codeLen) {
   if (code.includes(' ')) {
     return code.split(' ').map(s => s.trim()).filter(s => s)
   }
-  // 最后按固定长度截取，并补齐2位
+  // 最后按固定长度截取（单个字符）
   const result = []
   for (let i = 0; i < code.length && i < codeLen; i++) {
     if (code[i] >= '0' && code[i] <= '9') {
-      // 两位数处理
-      let num = ''
-      if (i + 1 < code.length && code[i+1] >= '0' && code[i+1] <= '9') {
-        num = code[i] + code[i+1]
-        i++
-      } else {
-        num = code[i]
-      }
-      result.push(num)
+      result.push(code[i])
     }
   }
   return result
@@ -343,6 +335,17 @@ app.put('/api/admin/lottery/:id', requireAuth, async (req, res) => {
 // 后台删除
 app.delete('/api/admin/lottery/:id', requireAuth, async (req, res) => {
   const { id } = req.params
+  
+  // 获取要删除的记录
+  const item = await sql`SELECT lottery_type, issue FROM lottery_history WHERE id = ${id}`
+  if (item.rows.length > 0) {
+    const { lottery_type, issue } = item.rows[0]
+    // 如果是排列五，同时删除排列三
+    if (lottery_type === 'plw') {
+      await sql`DELETE FROM lottery_history WHERE lottery_type = 'pl3' AND issue = ${issue}`
+    }
+  }
+  
   await sql`DELETE FROM lottery_history WHERE id = ${id}`
   res.json({ ok: true })
 })

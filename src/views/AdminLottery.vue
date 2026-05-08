@@ -83,11 +83,9 @@
         </table>
       </div>
 
-      <!-- 分页 -->
-      <div class="pagination" v-if="hasMore">
-        <button @click="loadMore" :disabled="loading" class="load-more">
-          {{ loading ? '加载中...' : '加载更多' }}
-        </button>
+      <!-- 加载更多（自动触发） -->
+      <div ref="loadmoreRef" class="load-more" v-if="hasMore">
+        {{ loading ? '加载中...' : '上滑加载更多' }}
       </div>
     </template>
 
@@ -123,8 +121,9 @@
                 <button 
                   @click="toggleAnnouncement(item)" 
                   :class="['status-btn', item.enabled ? 'enabled' : 'disabled']"
+                  :disabled="annLoading"
                 >
-                  {{ item.enabled ? '启用' : '停用' }}
+                  {{ annLoading ? '...' : (item.enabled ? '停用' : '启用') }}
                 </button>
               </td>
               <td>
@@ -157,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
@@ -185,13 +184,15 @@ const changing = ref(false)
 const codeError = ref('')
 const passwordError = ref('')
 const loading = ref(false)
-const offset = ref(0)
 const hasMore = ref(true)
+const offset = ref(0)
+const loadmoreRef = ref(null)
 
 // 公告相关
 const annList = ref([])
 const annEditingId = ref(null)
 const annSubmitting = ref(false)
+const annLoading = ref(false)
 const annForm = reactive({
   content: '',
   enabled: true
@@ -291,8 +292,18 @@ const fetchData = async () => {
 }
 
 const loadMore = async () => {
+  if (loading.value || !hasMore.value) return
   offset.value += PAGE_SIZE
   await fetchData()
+}
+
+// 滚动检测
+const handleScroll = () => {
+  if (!loadmoreRef.value) return
+  const rect = loadmoreRef.value.getBoundingClientRect()
+  if (rect.top < window.innerHeight + 100) {
+    loadMore()
+  }
 }
 
 const handleSubmit = async () => {
@@ -408,13 +419,21 @@ const handleAnnDelete = async (id) => {
 }
 
 const toggleAnnouncement = async (item) => {
-  await axios.put(`/api/admin/announcements/${item.id}`, {
-    content: item.content,
-    enabled: !item.enabled
-  }, {
-    headers: { Authorization: getToken() }
-  })
-  fetchAnnouncements()
+  if (annLoading.value) return
+  annLoading.value = true
+  try {
+    await axios.put(`/api/admin/announcements/${item.id}`, {
+      content: item.content,
+      enabled: !item.enabled
+    }, {
+      headers: { Authorization: getToken() }
+    })
+    fetchAnnouncements()
+  } catch (e) {
+    alert(e.response?.data?.error || '操作失败')
+  } finally {
+    annLoading.value = false
+  }
 }
 
 const handleChangePassword = async () => {
@@ -457,6 +476,11 @@ const formatDate = (date) => {
 onMounted(() => {
   fetchData()
   fetchAnnouncements()
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -654,17 +678,16 @@ th {
   color: #fff;
 }
 
-.pagination {
-  text-align: center;
-  padding: 1rem;
+.status-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .load-more {
-  padding: 0.5rem 2rem;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
+  text-align: center;
+  padding: 1rem;
+  color: #999;
+  font-size: 0.875rem;
 }
 
 .modal-overlay {

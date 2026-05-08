@@ -1,6 +1,5 @@
 <template>
   <div class="home">
-    <AnnouncementBar />
     <div class="container">
       <!-- 最新开奖 -->
       <div class="latest-box" v-if="lotteryList.length > 0">

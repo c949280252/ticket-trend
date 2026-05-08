@@ -42,10 +42,8 @@
             <span class="date">{{ typeof item.date === 'string' ? item.date.split('T')[0] : item.date }}</span>
           </div>
         </div>
-        <div class="load-more" v-if="hasMore">
-          <button @click="loadMore" :disabled="loading">
-            {{ loading ? '加载中...' : '加载更多' }}
-          </button>
+        <div class="load-more" ref="loadMoreRef" v-if="hasMore">
+          {{ loading ? '加载中...' : '上滑加载更多' }}
         </div>
       </div>
     </div>
@@ -53,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
@@ -67,6 +65,7 @@ const loading = ref(false)
 const hasMore = ref(true)
 const offset = ref(0)
 const PAGE_SIZE = 20
+const loadMoreRef = ref(null)
 let timer = null
 
 const fetchData = async (reset = false) => {
@@ -95,6 +94,7 @@ const fetchData = async (reset = false) => {
 }
 
 const loadMore = async () => {
+  if (loading.value || !hasMore.value) return
   offset.value += PAGE_SIZE
   try {
     const historyRes = await axios.get(`/api/lottery/${lotteryId}/history?limit=${PAGE_SIZE}&offset=${offset.value}`)
@@ -102,6 +102,15 @@ const loadMore = async () => {
     hasMore.value = historyRes.data.length === PAGE_SIZE
   } catch (e) {
     console.error(e)
+  }
+}
+
+// 滚动检测
+const handleScroll = () => {
+  if (!loadMoreRef.value) return
+  const rect = loadMoreRef.value.getBoundingClientRect()
+  if (rect.top < window.innerHeight + 100) {
+    loadMore()
   }
 }
 
@@ -114,10 +123,12 @@ const formatDate = (date) => {
 onMounted(() => {
   fetchData()
   timer = setInterval(fetchData, 5000)
+  window.addEventListener('scroll', handleScroll)
 })
 
 onUnmounted(() => {
   if (timer) clearInterval(timer)
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
