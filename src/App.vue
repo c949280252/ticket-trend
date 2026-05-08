@@ -1,11 +1,12 @@
 <template>
   <div id="app">
     <header class="header">
-      <AnnouncementBar />
       <div class="container">
         <h1 @click="$router.push('/')">查彩网</h1>
       </div>
     </header>
+
+    <AnnouncementBar />
 
     <main class="main">
       <router-view />
@@ -44,7 +45,7 @@ body {
 .header {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   color: #fff;
-  padding: 0;
+  padding: 1rem 0;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -53,7 +54,7 @@ body {
 .header .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0 1rem;
   text-align: center;
 }
 

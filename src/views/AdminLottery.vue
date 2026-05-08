@@ -61,6 +61,7 @@
         <table>
           <thead>
             <tr>
+              <th>彩种</th>
               <th>期号</th>
               <th>开奖号码</th>
               <th>开奖时间</th>
@@ -70,6 +71,7 @@
           </thead>
           <tbody>
             <tr v-for="item in list" :key="item.id">
+              <td>{{ getLotteryName(item.lottery_type) }}</td>
               <td>{{ item.issue }}</td>
               <td>{{ item.code }}</td>
               <td>{{ item.draw_time }}</td>
@@ -83,10 +85,11 @@
         </table>
       </div>
 
-      <!-- 加载更多（自动触发） -->
-      <div ref="loadmoreRef" class="load-more" v-if="hasMore">
-        {{ loading ? '加载中...' : '上滑加载更多' }}
+      <!-- 加载更多 -->
+      <div class="load-more" ref="loadmoreRef" v-if="hasMore && !loading" @click="loadMore">
+        点击加载更多
       </div>
+      <div class="load-more" v-if="loading">加载中...</div>
     </template>
 
     <!-- 公告管理 -->
@@ -156,7 +159,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
@@ -168,10 +171,13 @@ const LOTTERY_CONFIG = {
   'dlt': { name: '超级大乐透', codeLen: 7 },
   'qlc': { name: '七乐彩', codeLen: 7 },
   'plw': { name: '排列五', codeLen: 5 },
+  'pl3': { name: '排列三', codeLen: 3 },
   'qxc': { name: '七星彩', codeLen: 7 }
 }
 
-// 分页参数
+// 查询用的彩种配置（不包含pl3，因为pl3数据来自plw）
+const QUERY_CONFIG = { ...LOTTERY_CONFIG }
+
 const PAGE_SIZE = 20
 const list = ref([])
 const searchType = ref('3d')
@@ -185,7 +191,7 @@ const codeError = ref('')
 const passwordError = ref('')
 const loading = ref(false)
 const hasMore = ref(true)
-const offset = ref(0)
+const page = ref(1)
 const loadmoreRef = ref(null)
 
 // 公告相关
@@ -259,7 +265,7 @@ const onLotteryTypeChange = () => {
 const switchTab = (key) => {
   searchType.value = key
   searchIssue.value = ''
-  offset.value = 0
+  page.value = 1
   hasMore.value = true
   fetchData()
 }
@@ -270,14 +276,14 @@ const fetchData = async () => {
     const params = new URLSearchParams()
     params.append('type', searchType.value)
     params.append('limit', PAGE_SIZE)
-    params.append('offset', offset.value)
+    params.append('page', page.value)
     if (searchIssue.value) params.append('issue', searchIssue.value)
     
     const res = await axios.get(`/api/admin/lottery?${params}`, {
       headers: { Authorization: getToken() }
     })
     
-    if (offset.value === 0) {
+    if (page.value === 1) {
       list.value = res.data
     } else {
       list.value = [...list.value, ...res.data]
@@ -293,17 +299,8 @@ const fetchData = async () => {
 
 const loadMore = async () => {
   if (loading.value || !hasMore.value) return
-  offset.value += PAGE_SIZE
+  page.value++
   await fetchData()
-}
-
-// 滚动检测
-const handleScroll = () => {
-  if (!loadmoreRef.value) return
-  const rect = loadmoreRef.value.getBoundingClientRect()
-  if (rect.top < window.innerHeight + 100) {
-    loadMore()
-  }
 }
 
 const handleSubmit = async () => {
@@ -468,6 +465,8 @@ const handleChangePassword = async () => {
   }
 }
 
+const getLotteryName = (type) => LOTTERY_CONFIG[type]?.name || type
+
 const formatDate = (date) => {
   if (!date) return ''
   return date.replace('T', ' ').slice(0, 19)
@@ -476,18 +475,13 @@ const formatDate = (date) => {
 onMounted(() => {
   fetchData()
   fetchAnnouncements()
-  window.addEventListener('scroll', handleScroll)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
 <style scoped>
 .admin-page {
-  padding: 1rem;
-  max-width: 800px;
+  padding: 1.5rem;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -495,26 +489,26 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .header h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 .header-actions {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
 
 .tab-btn {
-  padding: 0.4rem 0.75rem;
+  padding: 0.5rem 1rem;
   background: #f5f5f5;
   border: 1px solid #ddd;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
 }
 
 .tab-btn.active {
@@ -530,51 +524,53 @@ onUnmounted(() => {
 
 .form-box {
   background: #fff;
-  padding: 1rem;
+  padding: 1.5rem;
   border-radius: 8px;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-box h3 {
-  margin: 0 0 0.75rem 0;
-  font-size: 1rem;
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
 }
 
 .form-row {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
 .form-row select,
 .form-row input {
-  padding: 0.5rem;
+  padding: 0.6rem;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 0.95rem;
 }
 
 .form-row select {
-  min-width: 100px;
+  min-width: 120px;
 }
 
 .form-row input[type="text"] {
   flex: 1;
-  min-width: 100px;
+  min-width: 150px;
 }
 
 .form-actions {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .form-actions button {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.2rem;
   background: #1a56a8;
   color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.95rem;
 }
 
 .cancel-btn {
@@ -583,18 +579,18 @@ onUnmounted(() => {
 
 .lottery-tabs {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .lottery-tab {
-  padding: 0.4rem 0.6rem;
+  padding: 0.5rem 0.8rem;
   background: #f0f0f0;
   border: none;
   border-radius: 20px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   transition: all 0.2s;
 }
 
@@ -605,31 +601,33 @@ onUnmounted(() => {
 
 .search-row {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
 }
 
 .search-row input {
   flex: 1;
-  padding: 0.5rem;
+  padding: 0.6rem;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 0.95rem;
 }
 
 .search-row button {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.2rem;
   background: #1a56a8;
   color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.95rem;
 }
 
 .table-box {
   background: #fff;
   border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 table {
@@ -638,10 +636,10 @@ table {
 }
 
 th, td {
-  padding: 0.6rem;
+  padding: 0.75rem;
   text-align: left;
   border-bottom: 1px solid #eee;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
 }
 
 th {
@@ -650,12 +648,12 @@ th {
 }
 
 .edit-btn, .delete-btn, .status-btn {
-  padding: 0.2rem 0.5rem;
+  padding: 0.3rem 0.6rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.75rem;
-  margin-right: 0.25rem;
+  font-size: 0.8rem;
+  margin-right: 0.3rem;
 }
 
 .edit-btn {
@@ -686,8 +684,9 @@ th {
 .load-more {
   text-align: center;
   padding: 1rem;
-  color: #999;
-  font-size: 0.875rem;
+  color: #1a56a8;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .modal-overlay {
@@ -708,7 +707,7 @@ th {
   padding: 1.5rem;
   border-radius: 8px;
   width: 90%;
-  max-width: 350px;
+  max-width: 400px;
 }
 
 .modal h3 {
@@ -717,24 +716,26 @@ th {
 
 .modal input {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.6rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   margin-bottom: 0.75rem;
   box-sizing: border-box;
+  font-size: 0.95rem;
 }
 
 .modal-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .modal-actions button {
   flex: 1;
-  padding: 0.5rem;
+  padding: 0.6rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.95rem;
 }
 
 .modal-actions button:first-child {
@@ -744,7 +745,7 @@ th {
 
 .error {
   color: #e63946;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   margin: 0.5rem 0 0;
 }
 
@@ -752,16 +753,17 @@ th {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin: 0.5rem 0;
+  margin: 0.75rem 0;
 }
 
 textarea {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.6rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   resize: vertical;
   font-family: inherit;
   box-sizing: border-box;
+  font-size: 0.95rem;
 }
 </style>

@@ -287,9 +287,10 @@ async function requireAuth(req, res, next) {
 
 // 后台列表
 app.get('/api/admin/lottery', requireAuth, async (req, res) => {
-  const { type, issue, limit = 20, offset = 0 } = req.query
+  const { type, issue, limit = 20, page = 1 } = req.query
   const limitNum = parseInt(limit) || 20
-  const offsetNum = parseInt(offset) || 0
+  const pageNum = parseInt(page) || 1
+  const offsetNum = (pageNum - 1) * limitNum
   
   let sqlQuery = 'SELECT * FROM lottery_history WHERE 1=1'
   const params = []
