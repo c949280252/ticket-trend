@@ -1,42 +1,22 @@
 <template>
   <div class="home">
     <div class="container">
-      <!-- 最新开奖 -->
-      <div class="latest-box" v-if="lotteryList.length > 0">
+      <!-- 趋势图 -->
+      <div class="trend-section">
         <div class="section-header">
-          <h3 class="section-title">最新开奖</h3>
-          <span class="section-tag">每日更新</span>
-        </div>
-        <div class="lottery-header">
-          <span class="lottery-name">{{ lotteryList[0].name }}</span>
-          <span class="lottery-issue">第{{ lotteryList[0].latestIssue }}期</span>
-        </div>
-        <div class="balls">
-          <span
-            v-for="(ball, index) in lotteryList[0].balls"
-            :key="index"
-            class="ball"
-          >{{ ball }}</span>
-        </div>
-        <div class="lottery-date">{{ formatDate(lotteryList[0].date) }}</div>
-      </div>
-
-      <!-- 热门推荐 -->
-      <div class="hot-section">
-        <div class="section-header">
-          <h3 class="section-title">热门推荐</h3>
+          <h3 class="section-title">趋势图</h3>
           <span class="section-more">更多 ></span>
         </div>
-        <div class="hot-grid">
-          <div class="hot-card" v-for="item in hotList" :key="item.id" @click="goDetail(item.id)">
-            <div class="hot-icon" :style="{ background: item.color }">
+        <div class="trend-grid">
+          <div class="trend-card" v-for="item in lotteryList" :key="item.id" @click="goTrend(item.id)">
+            <div class="trend-icon" :style="{ background: item.color }">
               <span>{{ item.name.charAt(0) }}</span>
             </div>
-            <div class="hot-info">
-              <div class="hot-name">{{ item.name }}</div>
-              <div class="hot-issue">第{{ item.latestIssue }}期 · {{ item.hotScore }}人看过</div>
+            <div class="trend-info">
+              <div class="trend-name">{{ item.name }}</div>
+              <div class="trend-label">查看趋势</div>
             </div>
-            <div class="hot-arrow">></div>
+            <div class="trend-arrow">></div>
           </div>
         </div>
       </div>
@@ -99,10 +79,13 @@ let timer = null
 const hotList = computed(() => {
   return lotteryList.value.slice(0, 4).map((item, index) => ({
     ...item,
-    color: ['#e63946', '#1a56a8', '#2d9cdb', '#f59e0b'][index % 4],
-    hotScore: Math.floor(Math.random() * 1000) + 500
+    color: ['#e63946', '#1a56a8', '#2d9cdb', '#f59e0b'][index % 4]
   }))
 })
+
+const goTrend = (id) => {
+  router.push(`/trend/${id}`)
+}
 
 const fetchData = async () => {
   try {
@@ -257,8 +240,8 @@ onUnmounted(() => {
   color: #999;
 }
 
-/* 热门推荐 */
-.hot-section {
+/* 趋势图 */
+.trend-section {
   background: #fff;
   border-radius: 12px;
   padding: 1rem;
@@ -266,13 +249,13 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
-.hot-grid {
+.trend-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
 }
 
-.hot-card {
+.trend-card {
   display: flex;
   align-items: center;
   padding: 0.75rem;
@@ -282,42 +265,42 @@ onUnmounted(() => {
   transition: all 0.2s;
 }
 
-.hot-card:active {
+.trend-card:active {
   background: #f0f0f0;
 }
 
-.hot-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+.trend-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 0.75rem;
 }
 
-.hot-icon span {
+.trend-icon span {
   font-size: 1.25rem;
   font-weight: bold;
   color: #fff;
 }
 
-.hot-info {
+.trend-info {
   flex: 1;
 }
 
-.hot-name {
-  font-size: 0.9rem;
+.trend-name {
+  font-size: 0.95rem;
   font-weight: 600;
   color: #333;
 }
 
-.hot-issue {
+.trend-label {
   font-size: 0.7rem;
   color: #999;
 }
 
-.hot-arrow {
+.trend-arrow {
   color: #ccc;
   font-size: 0.9rem;
 }
@@ -368,18 +351,18 @@ onUnmounted(() => {
 
 .nav-balls {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.4rem;
   margin-right: 0.5rem;
 }
 
 .ball-small {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: bold;
   color: #fff;
   background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
