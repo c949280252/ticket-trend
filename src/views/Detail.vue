@@ -58,7 +58,7 @@
                 ></span>
               </div>
               <div class="matrix-totals">
-                <span class="matrix-label">出现</span>
+                <span class="matrix-totals-label">出现</span>
                 <span v-for="n in 10" :key="n" class="matrix-total-num">{{ getCount(n - 1) }}</span>
               </div>
             </div>
@@ -463,18 +463,22 @@ onMounted(() => {
 
 .matrix-totals {
   display: flex;
-  padding-left: 55px;
+  align-items: center;
   gap: 3px;
   margin-top: 6px;
   padding-top: 6px;
+  padding-right: 28px;
   border-top: 1px solid #ddd;
+  justify-content: flex-start;
 }
 
-.matrix-label {
+.matrix-totals-label {
   width: 55px;
   font-size: 0.75rem;
   color: #999;
   flex-shrink: 0;
+  text-align: right;
+  padding-right: 5px;
 }
 
 .matrix-total-num {
