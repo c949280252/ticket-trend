@@ -65,7 +65,6 @@
                 <span class="matrix-header-issue">期号</span>
                 <span class="matrix-header-balls">开奖</span>
                 <span v-for="n in 10" :key="n" class="matrix-header-num">{{ n - 1 }}</span>
-                <span class="matrix-header-issue">出现</span>
               </div>
               <div v-for="(item, idx) in trendListFinal" :key="item.issue" class="matrix-row">
                 <span class="matrix-issue">{{ item.issue.slice(-4) }}</span>
@@ -81,7 +80,7 @@
               </div>
               <div class="matrix-totals">
                 <span class="matrix-totals-label">出现</span>
-                <span class="matrix-totals-balls">-</span>
+                <span class="matrix-totals-balls"></span>
                 <span v-for="n in 10" :key="n" class="matrix-total-num">{{ getCount(n - 1) }}</span>
               </div>
             </div>
