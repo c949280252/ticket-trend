@@ -1,28 +1,6 @@
 <template>
   <div class="home">
     <div class="container">
-      <!-- 统计数据 -->
-      <div class="stats-section">
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="stat-value">{{ stats.totalRecords }}</div>
-            <div class="stat-label">开奖数据</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">{{ stats.totalUsers }}</div>
-            <div class="stat-label">活跃用户</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">{{ stats.todayDraws }}</div>
-            <div class="stat-label">今日开奖</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">{{ stats.totalPrizes }}</div>
-            <div class="stat-label">中奖次数</div>
-          </div>
-        </div>
-      </div>
-
       <!-- 最新开奖 -->
       <div class="latest-box" v-if="lotteryList.length > 0">
         <div class="section-header">
@@ -116,14 +94,6 @@ import axios from 'axios'
 const router = useRouter()
 const lotteryList = ref([])
 let timer = null
-
-// 统计数据（模拟）
-const stats = ref({
-  totalRecords: '50,000+',
-  totalUsers: '128,000+',
-  todayDraws: '7',
-  totalPrizes: '1,200,000+'
-})
 
 // 热门推荐（基于彩种数据）
 const hotList = computed(() => {
