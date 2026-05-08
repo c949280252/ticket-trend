@@ -22,23 +22,6 @@ const LOTTERY_CONFIG = {
 
 // ========== 数据库操作 ==========
 
-// 修复排列三数据格式（启动时）
-async function fixPl3Data() {
-  const pl3Data = await sql`SELECT id, code FROM lottery_history WHERE lottery_type = 'pl3'`
-  let fixed = 0
-  for (const row of pl3Data.rows) {
-    if (!row.code.includes(',')) {
-      const digits = row.code.replace(/,/g, '')
-      if (digits.length === 3) {
-        const formatted = digits.split('').join(',')
-        await sql`UPDATE lottery_history SET code = ${formatted} WHERE id = ${row.id}`
-        fixed++
-      }
-    }
-  }
-  console.log(`修复 ${fixed} 条排列三数据`)
-}
-
 // 清理数据：每个彩种保留最多2000条
 async function cleanupOldData() {
   for (const lotteryType of Object.keys(LOTTERY_CONFIG)) {
@@ -485,7 +468,7 @@ app.delete('/api/admin/announcements/:id', requireAuth, async (req, res) => {
   res.json({ ok: true })
 })
 
-// 启动时初始化并修复数据
-initAdminSettings().then(fixPl3Data).catch(console.error)
+// 启动时初始化
+initAdminSettings().catch(console.error)
 
 export default (req, res) => app(req, res)
