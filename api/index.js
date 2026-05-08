@@ -22,11 +22,10 @@ const LOTTERY_CONFIG = {
 
 // ========== 数据库操作 ==========
 
-// 迁移：修复历史数据格式
-async function migrateData() {
-  let fixed = 0
-  // 修复排列三：补逗号
+// 修复排列三数据格式（启动时）
+async function fixPl3Data() {
   const pl3Data = await sql`SELECT id, code FROM lottery_history WHERE lottery_type = 'pl3'`
+  let fixed = 0
   for (const row of pl3Data.rows) {
     if (!row.code.includes(',')) {
       const digits = row.code.replace(/,/g, '')
@@ -37,7 +36,7 @@ async function migrateData() {
       }
     }
   }
-  console.log(`迁移完成，修复 ${fixed} 条排列三数据`)
+  console.log(`修复 ${fixed} 条排列三数据`)
 }
 
 // 清理数据：每个彩种保留最多2000条
@@ -56,54 +55,22 @@ async function cleanupOldData() {
 async function getFromDB(lotteryType, limit = 30, offset = 0) {
   const config = LOTTERY_CONFIG[lotteryType]
   const codeLen = config?.codeLen || 10
-  const result = await sql`SELECT id, issue, code, draw_time, created_at FROM lottery_history WHERE lottery_type = ${lotteryType} ORDER BY issue DESC LIMIT ${limit} OFFSET ${offset}`
-  
-  // 自动修复格式并返回
-  const rows = []
-  for (const r of result.rows) {
-    let code = r.code
-    // 自动修复格式
-    if (!code.includes(',')) {
-      const digits = code.replace(/,/g, '')
-      if (lotteryType === 'pl3' || lotteryType === '3d') {
-        code = digits.split('').join(',')
-      } else if (['ssq', 'dlt', 'qlc'].includes(lotteryType)) {
-        code = digits.split('').map(d => d.padStart(2, '0')).join(',')
-      }
-      // 修复数据库
-      await sql`UPDATE lottery_history SET code = ${code} WHERE id = ${r.id}`
-    }
-    rows.push({ issue: r.issue, balls: formatBalls(code, codeLen), date: r.draw_time, created_at: r.created_at })
-  }
-  return rows
+  const result = await sql`SELECT issue, code, draw_time, created_at FROM lottery_history WHERE lottery_type = ${lotteryType} ORDER BY issue DESC LIMIT ${limit} OFFSET ${offset}`
+  return result.rows.map(r => ({ issue: r.issue, balls: formatBalls(r.code, codeLen), date: r.draw_time, created_at: r.created_at }))
 }
 
 // 批量获取所有彩种最新数据（一次查询）
 async function getAllLatestData() {
   const result = await sql`
-    SELECT id, t.* FROM (
-      SELECT DISTINCT ON (lottery_type) lottery_type, issue, code, draw_time, created_at 
-      FROM lottery_history 
-      ORDER BY lottery_type, issue DESC
-    ) t
+    SELECT DISTINCT ON (lottery_type) lottery_type, issue, code, draw_time, created_at 
+    FROM lottery_history 
+    ORDER BY lottery_type, issue DESC
   `
   const map = {}
   for (const r of result.rows) {
     const config = LOTTERY_CONFIG[r.lottery_type]
     const codeLen = config?.codeLen || 10
-    let code = r.code
-    // 自动修复格式
-    if (!code.includes(',')) {
-      const digits = code.replace(/,/g, '')
-      if (r.lottery_type === 'pl3' || r.lottery_type === '3d') {
-        code = digits.split('').join(',')
-      } else if (['ssq', 'dlt', 'qlc'].includes(r.lottery_type)) {
-        code = digits.split('').map(d => d.padStart(2, '0')).join(',')
-      }
-      // 修复数据库
-      await sql`UPDATE lottery_history SET code = ${code} WHERE id = ${r.id}`
-    }
-    map[r.lottery_type] = { issue: r.issue, balls: formatBalls(code, codeLen), date: r.draw_time, created_at: r.created_at }
+    map[r.lottery_type] = { issue: r.issue, balls: formatBalls(r.code, codeLen), date: r.draw_time, created_at: r.created_at }
   }
   return map
 }
@@ -518,7 +485,7 @@ app.delete('/api/admin/announcements/:id', requireAuth, async (req, res) => {
   res.json({ ok: true })
 })
 
-// 启动时初始化
-initAdminSettings().catch(console.error)
+// 启动时初始化并修复数据
+initAdminSettings().then(fixPl3Data).catch(console.error)
 
 export default (req, res) => app(req, res)
