@@ -257,24 +257,31 @@ const onLotteryTypeChange = async () => {
   try {
     const res = await axios.get(`/api/lottery/${form.lottery_type}`)
     if (res.data.latest?.date) {
-      // 解析最近开奖时间的时分
-      const latestDate = new Date(res.data.latest.date)
-      const hour = latestDate.getHours()
-      const minute = latestDate.getMinutes()
-      
-      // 用今天的日期 + 最近开奖的时分
-      const today = new Date()
-      today.setHours(hour, minute, 0, 0)
-      form.draw_time = today.toISOString().slice(0, 16)
+      // 直接从日期字符串提取时分（格式：2026-05-08T10:35:00.000Z）
+      const dateStr = res.data.latest.date
+      const match = dateStr.match(/T(\d{2}):(\d{2}):/)
+      if (match) {
+        const hour = parseInt(match[1])
+        const minute = parseInt(match[2])
+        
+        // 用今天的日期 + 最近开奖的时分
+        const today = new Date()
+        today.setHours(hour, minute, 0, 0)
+        form.draw_time = today.toISOString().slice(0, 16)
+        codeError.value = ''
+        return
+      }
     }
   } catch (e) {
     // 如果获取失败，使用默认时间
-    const today = new Date()
-    const drawTime = LOTTERY_DRAW_TIME[form.lottery_type] || '21:00'
-    const [hour, minute] = drawTime.split(':')
-    today.setHours(parseInt(hour), parseInt(minute), 0, 0)
-    form.draw_time = today.toISOString().slice(0, 16)
   }
+  
+  // 默认时间
+  const today = new Date()
+  const drawTime = LOTTERY_DRAW_TIME[form.lottery_type] || '21:00'
+  const [hour, minute] = drawTime.split(':')
+  today.setHours(parseInt(hour), parseInt(minute), 0, 0)
+  form.draw_time = today.toISOString().slice(0, 16)
   codeError.value = ''
 }
 
