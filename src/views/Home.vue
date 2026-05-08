@@ -289,20 +289,13 @@ onUnmounted(() => {
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
 }
 
-.nav-item:last-child {
-  border-bottom: none;
-}
-
-.nav-item:active {
-  background: #f9f9f9;
-}
-
 .nav-info {
+  min-width: 0;
   flex: 1;
 }
 
@@ -317,22 +310,31 @@ onUnmounted(() => {
 .nav-issue {
   font-size: 0.75rem;
   color: #999;
+  white-space: nowrap;
 }
 
 .nav-balls {
   display: flex;
-  gap: 0.4rem;
+  flex-wrap: wrap;
+  gap: 0.25rem;
   margin-right: 0.5rem;
+  max-width: 180px;
+}
+
+.arrow {
+  color: #ccc;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .ball-small {
-  width: 36px;
-  height: 36px;
+  min-width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: bold;
   color: #fff;
   background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
