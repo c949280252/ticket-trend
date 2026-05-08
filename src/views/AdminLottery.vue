@@ -3,14 +3,14 @@
     <div class="header">
       <h2>开奖结果管理</h2>
       <div class="header-actions">
-        <button :class="['secondary-btn', { active: currentTab === 'lottery' }]" @click="currentTab = 'lottery'">开奖</button>
-        <button :class="['secondary-btn', { active: currentTab === 'announcement' }]" @click="currentTab = 'announcement'">公告</button>
-        <button class="secondary-btn" @click="showPasswordModal = true">改密码</button>
-        <button class="logout-btn" @click="handleLogout">退出</button>
+        <button :class="['tab-btn', { active: currentTab === 'lottery' }]" @click="currentTab = 'lottery'">开奖</button>
+        <button :class="['tab-btn', { active: currentTab === 'announcement' }]" @click="currentTab = 'announcement'">公告</button>
+        <button class="tab-btn" @click="showPasswordModal = true">改密码</button>
+        <button class="tab-btn logout" @click="handleLogout">退出</button>
       </div>
     </div>
 
-<!-- 开奖管理 -->
+    <!-- 开奖管理 -->
     <template v-if="currentTab === 'lottery'">
       <!-- 添加表单 -->
       <div class="form-box">
@@ -40,18 +40,18 @@
         <p v-if="codeError" class="error">{{ codeError }}</p>
       </div>
 
-      <!-- 搜索（改为彩种标签） -->
-      <div class="tab-bar">
+      <!-- 彩种标签 -->
+      <div class="lottery-tabs">
         <button 
           v-for="(config, key) in LOTTERY_CONFIG" 
           :key="key"
-          :class="['tab-btn', { active: searchType === key }]"
+          :class="['lottery-tab', { active: searchType === key }]"
           @click="switchTab(key)"
         >
           {{ config.name }}
         </button>
       </div>
-      <div class="search-box" v-if="searchType">
+      <div class="search-row">
         <input v-model="searchIssue" placeholder="搜索期号" @keyup.enter="fetchData" />
         <button @click="fetchData">查询</button>
       </div>
@@ -61,7 +61,6 @@
         <table>
           <thead>
             <tr>
-              <th>彩种</th>
               <th>期号</th>
               <th>开奖号码</th>
               <th>开奖时间</th>
@@ -71,7 +70,6 @@
           </thead>
           <tbody>
             <tr v-for="item in list" :key="item.id">
-              <td>{{ getLotteryName(item.lottery_type) }}</td>
               <td>{{ item.issue }}</td>
               <td>{{ item.code }}</td>
               <td>{{ item.draw_time }}</td>
@@ -84,13 +82,20 @@
           </tbody>
         </table>
       </div>
+
+      <!-- 分页 -->
+      <div class="pagination" v-if="hasMore">
+        <button @click="loadMore" :disabled="loading" class="load-more">
+          {{ loading ? '加载中...' : '加载更多' }}
+        </button>
+      </div>
     </template>
 
     <!-- 公告管理 -->
     <template v-if="currentTab === 'announcement'">
       <div class="form-box">
         <h3>{{ annEditingId ? '编辑公告' : '添加公告' }}</h3>
-        <textarea v-model="annForm.content" placeholder="公告内容" rows="3"></textarea>
+        <textarea v-model="annForm.content" placeholder="公告内容" rows="4"></textarea>
         <label class="checkbox-label">
           <input type="checkbox" v-model="annForm.enabled" />
           启用
@@ -114,7 +119,14 @@
           <tbody>
             <tr v-for="item in annList" :key="item.id">
               <td>{{ item.content }}</td>
-              <td>{{ item.enabled ? '启用' : '停用' }}</td>
+              <td>
+                <button 
+                  @click="toggleAnnouncement(item)" 
+                  :class="['status-btn', item.enabled ? 'enabled' : 'disabled']"
+                >
+                  {{ item.enabled ? '启用' : '停用' }}
+                </button>
+              </td>
               <td>
                 <button @click="handleAnnEdit(item)" class="edit-btn">编辑</button>
                 <button @click="handleAnnDelete(item.id)" class="delete-btn">删除</button>
@@ -145,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
@@ -157,15 +169,14 @@ const LOTTERY_CONFIG = {
   'dlt': { name: '超级大乐透', codeLen: 7 },
   'qlc': { name: '七乐彩', codeLen: 7 },
   'plw': { name: '排列五', codeLen: 5 },
-  'pl3': { name: '排列三', codeLen: 3 },
   'qxc': { name: '七星彩', codeLen: 7 }
 }
 
+// 分页参数
+const PAGE_SIZE = 20
 const list = ref([])
-const historyList = ref([])
-const searchType = ref('3d') // 默认选中3D
+const searchType = ref('3d')
 const searchIssue = ref('')
-const historyType = ref('')
 const submitting = ref(false)
 const editingId = ref(null)
 const currentTab = ref('lottery')
@@ -173,6 +184,9 @@ const showPasswordModal = ref(false)
 const changing = ref(false)
 const codeError = ref('')
 const passwordError = ref('')
+const loading = ref(false)
+const offset = ref(0)
+const hasMore = ref(true)
 
 // 公告相关
 const annList = ref([])
@@ -183,12 +197,6 @@ const annForm = reactive({
   enabled: true
 })
 
-const passwordForm = reactive({
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-
 const form = reactive({
   lottery_type: '',
   issue: '',
@@ -196,13 +204,19 @@ const form = reactive({
   draw_time: ''
 })
 
+const passwordForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
 const getToken = () => localStorage.getItem('admin_token')
 
 const codePlaceholder = computed(() => {
   if (!form.lottery_type) return '开奖号码'
   const len = LOTTERY_CONFIG[form.lottery_type]?.codeLen || 7
-  if (len <= 3) return `如2,0,7 (${len}个数字，逗号分隔)`
-  return `如1,2,3,4,5,6,7 (${len}个数字，逗号分隔)`
+  if (len <= 3) return `如2,0,7 (${len}个数字)`
+  return `如1,2,3,4,5,6,7 (${len}个数字)`
 })
 
 const validateCode = () => {
@@ -215,53 +229,70 @@ const validateCode = () => {
   const validParts = parts.filter(p => p)
   
   if (validParts.length !== len) {
-    codeError.value = `格式错误，应为 ${len}个数字，逗号分隔`
+    codeError.value = `格式错误，应为 ${len}个数字`
   }
 }
 
-// 彩种开奖时间（小时:分钟）
+// 彩种开奖时间
 const LOTTERY_DRAW_TIME = {
   '3d': '21:15',
   'ssq': '21:15',
   'dlt': '20:25',
   'qlc': '21:15',
   'plw': '20:30',
-  'pl3': '20:30',
   'qxc': '20:30'
 }
 
-const onLotteryTypeChange = async () => {
+const onLotteryTypeChange = () => {
   if (!form.lottery_type) return
   
-  // 默认开奖时间：今天 + 该彩种开奖时间
   const today = new Date()
   const drawTime = LOTTERY_DRAW_TIME[form.lottery_type] || '21:00'
   const [hour, minute] = drawTime.split(':')
   today.setHours(parseInt(hour), parseInt(minute), 0, 0)
   form.draw_time = today.toISOString().slice(0, 16)
-  
-  // 清空号码错误提示
   codeError.value = ''
 }
 
-const fetchData = async () => {
-  const params = new URLSearchParams()
-  if (searchType.value) params.append('type', searchType.value)
-  if (searchIssue.value) params.append('issue', searchIssue.value)
-  
-  const res = await axios.get(`/api/admin/lottery?${params}`, {
-    headers: { Authorization: getToken() }
-  })
-  list.value = res.data
+// 搜索切换彩种
+const switchTab = (key) => {
+  searchType.value = key
+  searchIssue.value = ''
+  offset.value = 0
+  hasMore.value = true
+  fetchData()
 }
 
-const fetchHistory = async () => {
-  if (!historyType.value) {
-    historyList.value = []
-    return
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const params = new URLSearchParams()
+    params.append('type', searchType.value)
+    params.append('limit', PAGE_SIZE)
+    params.append('offset', offset.value)
+    if (searchIssue.value) params.append('issue', searchIssue.value)
+    
+    const res = await axios.get(`/api/admin/lottery?${params}`, {
+      headers: { Authorization: getToken() }
+    })
+    
+    if (offset.value === 0) {
+      list.value = res.data
+    } else {
+      list.value = [...list.value, ...res.data]
+    }
+    
+    hasMore.value = res.data.length === PAGE_SIZE
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading.value = false
   }
-  const res = await axios.get(`/api/lottery/${historyType.value}/history`)
-  historyList.value = res.data
+}
+
+const loadMore = async () => {
+  offset.value += PAGE_SIZE
+  await fetchData()
 }
 
 const handleSubmit = async () => {
@@ -324,12 +355,6 @@ const handleLogout = () => {
   router.push('/x7k9m2')
 }
 
-const switchTab = (key) => {
-  searchType.value = key
-  searchIssue.value = ''
-  fetchData()
-}
-
 const fetchAnnouncements = async () => {
   const res = await axios.get('/api/admin/announcements', {
     headers: { Authorization: getToken() }
@@ -382,6 +407,16 @@ const handleAnnDelete = async (id) => {
   fetchAnnouncements()
 }
 
+const toggleAnnouncement = async (item) => {
+  await axios.put(`/api/admin/announcements/${item.id}`, {
+    content: item.content,
+    enabled: !item.enabled
+  }, {
+    headers: { Authorization: getToken() }
+  })
+  fetchAnnouncements()
+}
+
 const handleChangePassword = async () => {
   if (!passwordForm.oldPassword || !passwordForm.newPassword) {
     passwordError.value = '请填写完整'
@@ -414,8 +449,6 @@ const handleChangePassword = async () => {
   }
 }
 
-const getLotteryName = (type) => LOTTERY_CONFIG[type]?.name || type
-
 const formatDate = (date) => {
   if (!date) return ''
   return date.replace('T', ' ').slice(0, 19)
@@ -430,7 +463,7 @@ onMounted(() => {
 <style scoped>
 .admin-page {
   padding: 1rem;
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -438,31 +471,49 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .header h2 {
   margin: 0;
+  font-size: 1.25rem;
 }
 
-.logout-btn {
-  padding: 0.5rem 1rem;
-  background: #666;
-  color: #fff;
-  border: none;
+.header-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.tab-btn {
+  padding: 0.4rem 0.75rem;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.tab-btn.active {
+  background: #1a56a8;
+  color: #fff;
+  border-color: #1a56a8;
+}
+
+.tab-btn.logout {
+  background: #666;
+  color: #fff;
 }
 
 .form-box {
   background: #fff;
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: 8px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .form-box h3 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
 }
 
 .form-row {
@@ -479,26 +530,22 @@ onMounted(() => {
 }
 
 .form-row select {
-  min-width: 120px;
+  min-width: 100px;
 }
 
 .form-row input[type="text"] {
   flex: 1;
-  min-width: 150px;
-}
-
-.form-row input[type="datetime-local"] {
-  width: 200px;
+  min-width: 100px;
 }
 
 .form-actions {
-  margin-top: 1rem;
   display: flex;
   gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 
 .form-actions button {
-  padding: 0.5rem 1.5rem;
+  padding: 0.5rem 1rem;
   background: #1a56a8;
   color: #fff;
   border: none;
@@ -506,28 +553,46 @@ onMounted(() => {
   cursor: pointer;
 }
 
-.form-actions button:disabled {
-  background: #ccc;
-}
-
 .cancel-btn {
   background: #666 !important;
 }
 
-.search-box {
+.lottery-tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.lottery-tab {
+  padding: 0.4rem 0.6rem;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.lottery-tab.active {
+  background: #1a56a8;
+  color: #fff;
+}
+
+.search-row {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
-.search-box select,
-.search-box input {
+.search-row input {
+  flex: 1;
   padding: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
 
-.search-box button {
+.search-row button {
   padding: 0.5rem 1rem;
   background: #1a56a8;
   color: #fff;
@@ -540,6 +605,7 @@ onMounted(() => {
   background: #fff;
   border-radius: 8px;
   overflow: hidden;
+  margin-bottom: 1rem;
 }
 
 table {
@@ -548,9 +614,10 @@ table {
 }
 
 th, td {
-  padding: 0.75rem;
+  padding: 0.6rem;
   text-align: left;
   border-bottom: 1px solid #eee;
+  font-size: 0.875rem;
 }
 
 th {
@@ -558,11 +625,12 @@ th {
   font-weight: bold;
 }
 
-.edit-btn, .delete-btn {
-  padding: 0.25rem 0.5rem;
+.edit-btn, .delete-btn, .status-btn {
+  padding: 0.2rem 0.5rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.75rem;
   margin-right: 0.25rem;
 }
 
@@ -576,41 +644,29 @@ th {
   color: #fff;
 }
 
-/* 历史记录页面 */
-.history-page {
-  background: #fff;
-  padding: 1.5rem;
-  border-radius: 8px;
-}
-
-.history-header {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.history-header select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.history-header button {
-  padding: 0.5rem 1rem;
-  background: #1a56a8;
+.status-btn.enabled {
+  background: #22c55e;
   color: #fff;
-  border: none;
+}
+
+.status-btn.disabled {
+  background: #999;
+  color: #fff;
+}
+
+.pagination {
+  text-align: center;
+  padding: 1rem;
+}
+
+.load-more {
+  padding: 0.5rem 2rem;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
   border-radius: 4px;
   cursor: pointer;
 }
 
-.empty {
-  padding: 2rem;
-  text-align: center;
-  color: #999;
-}
-
-/* 修改密码弹窗 */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -629,11 +685,11 @@ th {
   padding: 1.5rem;
   border-radius: 8px;
   width: 90%;
-  max-width: 400px;
+  max-width: 350px;
 }
 
 .modal h3 {
-  margin-top: 0;
+  margin: 0 0 1rem 0;
 }
 
 .modal input {
@@ -665,21 +721,24 @@ th {
 
 .error {
   color: #e63946;
-  font-size: 0.875rem;
-  margin: 0.25rem 0;
+  font-size: 0.8rem;
+  margin: 0.5rem 0 0;
 }
 
-.header-actions {
+.checkbox-label {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
+  margin: 0.5rem 0;
 }
 
-.secondary-btn {
-  padding: 0.5rem 1rem;
-  background: #666;
-  color: #fff;
-  border: none;
+textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
   border-radius: 4px;
-  cursor: pointer;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
 }
 </style>

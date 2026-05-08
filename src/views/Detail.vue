@@ -42,6 +42,11 @@
             <span class="date">{{ typeof item.date === 'string' ? item.date.split('T')[0] : item.date }}</span>
           </div>
         </div>
+        <div class="load-more" v-if="hasMore">
+          <button @click="loadMore" :disabled="loading">
+            {{ loading ? '加载中...' : '加载更多' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -58,19 +63,43 @@ const lotteryName = ref('')
 const latest = ref(null)
 const history = ref([])
 const prizes = ref([])
+const loading = ref(false)
+const hasMore = ref(true)
+const offset = ref(0)
+const PAGE_SIZE = 20
 let timer = null
 
-const fetchData = async () => {
+const fetchData = async (reset = false) => {
+  if (reset) {
+    offset.value = 0
+    hasMore.value = true
+  }
+  
+  loading.value = true
   try {
     const [infoRes, historyRes] = await Promise.all([
       axios.get(`/api/lottery/${lotteryId}`),
-      axios.get(`/api/lottery/${lotteryId}/history`)
+      axios.get(`/api/lottery/${lotteryId}/history?limit=${PAGE_SIZE}&offset=${offset.value}`)
     ])
     const data = infoRes.data
     lotteryName.value = data.name
     latest.value = data.latest
     history.value = historyRes.data
     prizes.value = data.latest?.prize || []
+    hasMore.value = historyRes.data.length === PAGE_SIZE
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadMore = async () => {
+  offset.value += PAGE_SIZE
+  try {
+    const historyRes = await axios.get(`/api/lottery/${lotteryId}/history?limit=${PAGE_SIZE}&offset=${offset.value}`)
+    history.value = [...history.value, ...historyRes.data]
+    hasMore.value = historyRes.data.length === PAGE_SIZE
   } catch (e) {
     console.error(e)
   }

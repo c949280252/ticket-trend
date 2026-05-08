@@ -35,10 +35,10 @@ async function cleanupOldData() {
 }
 
 // ========== 查询数据库 ==========
-async function getFromDB(lotteryType, limit = 30) {
+async function getFromDB(lotteryType, limit = 30, offset = 0) {
   const config = LOTTERY_CONFIG[lotteryType]
   const codeLen = config?.codeLen || 10
-  const result = await sql`SELECT issue, code, draw_time, created_at FROM lottery_history WHERE lottery_type = ${lotteryType} ORDER BY issue DESC LIMIT ${limit}`
+  const result = await sql`SELECT issue, code, draw_time, created_at FROM lottery_history WHERE lottery_type = ${lotteryType} ORDER BY issue DESC LIMIT ${limit} OFFSET ${offset}`
   return result.rows.map(r => ({ issue: r.issue, balls: formatBalls(r.code, codeLen), date: r.draw_time, created_at: r.created_at }))
 }
 
@@ -71,10 +71,20 @@ function formatBalls(code, codeLen) {
   if (code.includes(' ')) {
     return code.split(' ').map(s => s.trim()).filter(s => s)
   }
-  // 最后按固定长度截取
+  // 最后按固定长度截取，并补齐2位
   const result = []
   for (let i = 0; i < code.length && i < codeLen; i++) {
-    if (code[i] >= '0' && code[i] <= '9') result.push(code[i])
+    if (code[i] >= '0' && code[i] <= '9') {
+      // 两位数处理
+      let num = ''
+      if (i + 1 < code.length && code[i+1] >= '0' && code[i+1] <= '9') {
+        num = code[i] + code[i+1]
+        i++
+      } else {
+        num = code[i]
+      }
+      result.push(num)
+    }
   }
   return result
 }
@@ -197,9 +207,10 @@ app.get('/api/lottery/:id', async (req, res) => {
 // 历史记录 - 只返回数据，不触发更新
 app.get('/api/lottery/:id/history', async (req, res) => {
   const lotteryType = req.params.id
+  const { limit = 30, offset = 0 } = req.query
   if (!LOTTERY_CONFIG[lotteryType]) return res.status(404).json({ error: 'Not found' })
   
-  const data = await getFromDB(lotteryType, 30)
+  const data = await getFromDB(lotteryType, parseInt(limit) || 30, parseInt(offset) || 0)
   res.json(data)
 })
 
@@ -284,7 +295,10 @@ async function requireAuth(req, res, next) {
 
 // 后台列表
 app.get('/api/admin/lottery', requireAuth, async (req, res) => {
-  const { type, issue } = req.query
+  const { type, issue, limit = 20, offset = 0 } = req.query
+  const limitNum = parseInt(limit) || 20
+  const offsetNum = parseInt(offset) || 0
+  
   let sqlQuery = 'SELECT * FROM lottery_history WHERE 1=1'
   const params = []
   
@@ -296,9 +310,9 @@ app.get('/api/admin/lottery', requireAuth, async (req, res) => {
     params.push(`%${issue}%`)
     sqlQuery += ` AND issue LIKE $${params.length}`
   }
-  sqlQuery += ' ORDER BY id DESC LIMIT 100'
+  sqlQuery += ` ORDER BY id DESC LIMIT ${limitNum} OFFSET ${offsetNum}`
   
-  const result = await sql`${sqlQuery}`.catch(() => sql`SELECT * FROM lottery_history ORDER BY id DESC LIMIT 100`)
+  const result = await sql`${sqlQuery}`.catch(() => sql`SELECT * FROM lottery_history ORDER BY id DESC LIMIT ${limitNum}`)
   res.json(result.rows)
 })
 

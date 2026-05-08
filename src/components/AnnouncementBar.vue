@@ -1,11 +1,10 @@
 <template>
   <div class="announcement-bar" v-if="announcements.length > 0">
     <span class="label">公告：</span>
-    <div class="marquee">
-      <div class="marquee-content" :style="{ animationDuration: `${announcements.length * 5}s` }">
-        <span v-for="(item, index) in announcements" :key="item.id" class="announcement-text">
+    <div class="marquee-wrapper">
+      <div class="marquee-content">
+        <span v-for="item in announcements" :key="item.id" class="announcement-text">
           {{ item.content }}
-          <span v-if="index < announcements.length - 1" class="separator"> | </span>
         </span>
       </div>
     </div>
@@ -30,46 +29,47 @@ onMounted(async () => {
 
 <style scoped>
 .announcement-bar {
-  background: #fff3cd;
-  padding: 0.5rem 1rem;
+  background: #1a56a8;
+  padding: 0.4rem 0;
   display: flex;
   align-items: center;
   overflow: hidden;
   font-size: 0.875rem;
+  margin-bottom: 0;
 }
 
 .label {
   font-weight: bold;
-  color: #856404;
+  color: #fff;
+  padding: 0 0.5rem;
+  background: #1a56a8;
   flex-shrink: 0;
+  z-index: 1;
 }
 
-.marquee {
+.marquee-wrapper {
   flex: 1;
   overflow: hidden;
-  white-space: nowrap;
+  position: relative;
 }
 
 .marquee-content {
-  display: inline-block;
-  animation: scroll-left linear infinite;
-  color: #856404;
-}
-
-@keyframes scroll-left {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(-100%);
-  }
+  display: flex;
+  animation: scroll-left 30s linear infinite;
+  white-space: nowrap;
 }
 
 .announcement-text {
-  display: inline;
+  color: #fff;
+  padding: 0 2rem;
 }
 
-.separator {
-  margin: 0 1rem;
+@keyframes scroll-left {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
 </style>
