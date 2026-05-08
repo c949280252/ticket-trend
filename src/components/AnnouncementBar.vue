@@ -18,7 +18,7 @@ import axios from 'axios'
 const announcements = ref([])
 const contentRef = ref(null)
 
-const SPEED = 50 // 50px/秒
+const SPEED = 30 // 30px/秒
 
 onMounted(async () => {
   try {
