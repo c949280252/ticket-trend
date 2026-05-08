@@ -319,8 +319,7 @@ onUnmounted(() => {
   display: flex;
   gap: 0.25rem;
   margin-right: 0.5rem;
-  flex-wrap: nowrap;
-  overflow-x: auto;
+  flex-wrap: wrap;
 }
 
 .arrow {
