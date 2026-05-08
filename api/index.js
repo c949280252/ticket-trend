@@ -315,15 +315,33 @@ app.post('/api/admin/lottery', requireAuth, async (req, res) => {
   
   // 禁止单独添加排列三
   if (lottery_type === 'pl3') {
-    return res.status(400).json({ error: '请通过排列五添加' })
+return res.status(400).json({ error: '请通过排列五添加' })
   }
-  
-  // 标准化开奖号码（确保带逗号）
-  const normalizeCode = (code) => {
+   
+  // 标准化开奖号码（添加前导零）
+  const formatCode = (code, lotteryType) => {
+    const config = LOTTERY_CONFIG[lotteryType]
+    if (!config) return code
+    
+    // 提取数字
     const digits = code.replace(/,/g, '')
-    return digits
+    const codeLen = config.codeLen
+    
+    // 需要补零的彩种（双色球、大乐透、七乐彩是2位数）
+    const needPad = ['ssq', 'dlt', 'qlc'].includes(lotteryType)
+    
+    if (needPad) {
+      // 每两位加逗号，不足两位补前导零
+      const padded = digits.split('').map(d => d.padStart(2, '0')).join(',')
+      return padded
+    } else {
+      // 3D/排列三/排列五/七星彩不需要补零（单个数字0-9）
+      return digits.split('').join(',')
+    }
   }
-  
+   
+  const formattedCode = formatCode(code, lottery_type)
+   
   // 同步排列三（从排列五提取前3位，处理带逗号/不带逗号两种情况）
   const syncPl3 = async (issue, drawTime, code, existingId = null) => {
     // 提取数字，去除所有逗号
@@ -341,14 +359,14 @@ app.post('/api/admin/lottery', requireAuth, async (req, res) => {
         ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
     }
   }
-  
+   
   await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time, created_at)
-    VALUES (${lottery_type}, ${issue}, ${code}, ${draw_time || new Date()}, NOW())
+    VALUES (${lottery_type}, ${issue}, ${formattedCode}, ${draw_time || new Date()}, NOW())
     ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
-  
+   
   // 如果是排列五，自动同步排列三
   if (lottery_type === 'plw') {
-    await syncPl3(issue, draw_time || new Date(), code)
+    await syncPl3(issue, draw_time || new Date(), formattedCode)
   }
   
   res.json({ ok: true })
@@ -363,14 +381,17 @@ app.put('/api/admin/lottery/:id', requireAuth, async (req, res) => {
   if (lottery_type === 'pl3') {
     return res.status(400).json({ error: '请通过排列五更新' })
   }
-   
-  await sql`UPDATE lottery_history SET lottery_type = ${lottery_type}, issue = ${issue}, code = ${code}, draw_time = ${draw_time} WHERE id = ${id}`
   
+  // 格式化号码
+  const formattedCode = formatCode(code, lottery_type)
+    
+  await sql`UPDATE lottery_history SET lottery_type = ${lottery_type}, issue = ${issue}, code = ${formattedCode}, draw_time = ${draw_time} WHERE id = ${id}`
+   
   // 如果是排列五，自动同步排列三
   if (lottery_type === 'plw') {
-    await syncPl3(issue, draw_time, code, id)
+    await syncPl3(issue, draw_time, formattedCode, id)
   }
-  
+   
   res.json({ ok: true })
 })
 
