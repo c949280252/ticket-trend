@@ -218,6 +218,13 @@ async function initAdminSettings() {
     const hash = crypto.pbkdf2Sync('ticket123', salt, 100000, 64, 'sha512').toString('hex')
     await sql`INSERT INTO admin_settings (key, value) VALUES ('password', ${salt + ':' + hash})`
   }
+  // 创建公告表
+  await sql`CREATE TABLE IF NOT EXISTS announcements (
+    id SERIAL PRIMARY KEY,
+    content VARCHAR(500) NOT NULL,
+    enabled BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+  )`
 }
 
 // 读取密码哈希
@@ -341,6 +348,45 @@ app.put('/api/admin/password', requireAuth, async (req, res) => {
   const salt = crypto.randomBytes(16).toString('hex')
   const hash = crypto.pbkdf2Sync(newPassword, salt, 100000, 64, 'sha512').toString('hex')
   await sql`UPDATE admin_settings SET value = ${salt + ':' + hash} WHERE key = 'password'`
+  res.json({ ok: true })
+})
+
+// ========== 公告管理 ==========
+
+// 获取启用的公告列表
+app.get('/api/announcements', async (req, res) => {
+  const result = await sql`SELECT * FROM announcements WHERE enabled = true ORDER BY id DESC`
+  res.json(result.rows)
+})
+
+// 公告列表（后台）
+app.get('/api/admin/announcements', requireAuth, async (req, res) => {
+  const result = await sql`SELECT * FROM announcements ORDER BY id DESC`
+  res.json(result.rows)
+})
+
+// 添加公告
+app.post('/api/admin/announcements', requireAuth, async (req, res) => {
+  const { content, enabled } = req.body
+  if (!content) {
+    return res.status(400).json({ error: '内容不能为空' })
+  }
+  await sql`INSERT INTO announcements (content, enabled) VALUES (${content}, ${enabled !== false})`
+  res.json({ ok: true })
+})
+
+// 更新公告
+app.put('/api/admin/announcements/:id', requireAuth, async (req, res) => {
+  const { id } = req.params
+  const { content, enabled } = req.body
+  await sql`UPDATE announcements SET content = ${content}, enabled = ${enabled} WHERE id = ${id}`
+  res.json({ ok: true })
+})
+
+// 删除公告
+app.delete('/api/admin/announcements/:id', requireAuth, async (req, res) => {
+  const { id } = req.params
+  await sql`DELETE FROM announcements WHERE id = ${id}`
   res.json({ ok: true })
 })
 

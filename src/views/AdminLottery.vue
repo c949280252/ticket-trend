@@ -3,16 +3,15 @@
     <div class="header">
       <h2>开奖结果管理</h2>
       <div class="header-actions">
-        <button class="secondary-btn" @click="showHistory = !showHistory">
-          {{ showHistory ? '返回管理' : '查看历史' }}
-        </button>
-        <button class="secondary-btn" @click="showPasswordModal = true">修改密码</button>
-        <button class="logout-btn" @click="handleLogout">退出登录</button>
+        <button :class="['secondary-btn', { active: currentTab === 'lottery' }]" @click="currentTab = 'lottery'">开奖</button>
+        <button :class="['secondary-btn', { active: currentTab === 'announcement' }]" @click="currentTab = 'announcement'">公告</button>
+        <button class="secondary-btn" @click="showPasswordModal = true">改密码</button>
+        <button class="logout-btn" @click="handleLogout">退出</button>
       </div>
     </div>
 
-    <!-- 切换到历史记录页面 -->
-    <div v-if="showHistory" class="history-page">
+    <!-- 开奖管理 -->
+    <template v-if="currentTab === 'lottery'">
       <div class="history-header">
         <select v-model="historyType">
           <option value="">全部彩种</option>
@@ -75,16 +74,20 @@
         <p v-if="codeError" class="error">{{ codeError }}</p>
       </div>
 
-      <!-- 搜索 -->
-      <div class="search-box">
-        <select v-model="searchType">
-          <option value="">全部彩种</option>
-          <option v-for="(config, key) in LOTTERY_CONFIG" :key="key" :value="key">
-            {{ config.name }}
-          </option>
-        </select>
-        <input v-model="searchIssue" placeholder="搜索期号" />
-        <button @click="fetchData">搜索</button>
+      <!-- 搜索（改为彩种标签） -->
+      <div class="tab-bar">
+        <button 
+          v-for="(config, key) in LOTTERY_CONFIG" 
+          :key="key"
+          :class="['tab-btn', { active: searchType === key }]"
+          @click="switchTab(key)"
+        >
+          {{ config.name }}
+        </button>
+      </div>
+      <div class="search-box" v-if="searchType">
+        <input v-model="searchIssue" placeholder="搜索期号" @keyup.enter="fetchData" />
+        <button @click="fetchData">查询</button>
       </div>
 
       <!-- 数据列表 -->
@@ -110,6 +113,45 @@
               <td>
                 <button @click="handleEdit(item)" class="edit-btn">编辑</button>
                 <button @click="handleDelete(item.id)" class="delete-btn">删除</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </template>
+
+    <!-- 公告管理 -->
+    <template v-if="currentTab === 'announcement'">
+      <div class="form-box">
+        <h3>{{ annEditingId ? '编辑公告' : '添加公告' }}</h3>
+        <textarea v-model="annForm.content" placeholder="公告内容" rows="3"></textarea>
+        <label class="checkbox-label">
+          <input type="checkbox" v-model="annForm.enabled" />
+          启用
+        </label>
+        <div class="form-actions">
+          <button @click="handleAnnSubmit" :disabled="annSubmitting">
+            {{ annSubmitting ? '提交中...' : (annEditingId ? '更新' : '添加') }}
+          </button>
+          <button v-if="annEditingId" @click="cancelAnnEdit" class="cancel-btn">取消</button>
+        </div>
+      </div>
+      <div class="table-box">
+        <table>
+          <thead>
+            <tr>
+              <th>内容</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in annList" :key="item.id">
+              <td>{{ item.content }}</td>
+              <td>{{ item.enabled ? '启用' : '停用' }}</td>
+              <td>
+                <button @click="handleAnnEdit(item)" class="edit-btn">编辑</button>
+                <button @click="handleAnnDelete(item.id)" class="delete-btn">删除</button>
               </td>
             </tr>
           </tbody>
@@ -155,16 +197,25 @@ const LOTTERY_CONFIG = {
 
 const list = ref([])
 const historyList = ref([])
-const searchType = ref('')
+const searchType = ref('3d') // 默认选中3D
 const searchIssue = ref('')
 const historyType = ref('')
 const submitting = ref(false)
 const editingId = ref(null)
-const showHistory = ref(false)
+const currentTab = ref('lottery')
 const showPasswordModal = ref(false)
 const changing = ref(false)
 const codeError = ref('')
 const passwordError = ref('')
+
+// 公告相关
+const annList = ref([])
+const annEditingId = ref(null)
+const annSubmitting = ref(false)
+const annForm = reactive({
+  content: '',
+  enabled: true
+})
 
 const passwordForm = reactive({
   oldPassword: '',
@@ -185,8 +236,7 @@ const codePlaceholder = computed(() => {
   if (!form.lottery_type) return '开奖号码'
   const len = LOTTERY_CONFIG[form.lottery_type]?.codeLen || 7
   if (len <= 3) return `如2,0,7 (${len}个数字，逗号分隔)`
-  const examples = ['1,2,3,4,5', '01,02,03,04,05+06,07']
-  return `如${examples[len > 5 ? 1 : 0]}`
+  return `如1,2,3,4,5,6,7 (${len}个数字，逗号分隔)`
 })
 
 const validateCode = () => {
@@ -195,36 +245,34 @@ const validateCode = () => {
   
   const len = LOTTERY_CONFIG[form.lottery_type]?.codeLen || 7
   const code = form.code.replace(/\s/g, '')
-  const hasPlus = code.includes('+')
-  const parts = code.split('+')
+  const parts = code.split(',')
+  const validParts = parts.filter(p => p)
   
-  if (hasPlus && len > 5) {
-    // 大乐透/双色球/七乐彩/七星彩格式: 前区+后区
-    const frontLen = len - 2
-    if (parts[0].split(',').length !== frontLen || parts[1].split(',').length !== 2) {
-      codeError.value = `格式错误，应为 ${frontLen}个号码+2个号码`
-    }
-  } else if (code.split(',').length !== len) {
+  if (validParts.length !== len) {
     codeError.value = `格式错误，应为 ${len}个数字，逗号分隔`
   }
+}
+
+// 彩种开奖时间（小时:分钟）
+const LOTTERY_DRAW_TIME = {
+  '3d': '21:15',
+  'ssq': '21:15',
+  'dlt': '20:25',
+  'qlc': '21:15',
+  'plw': '20:30',
+  'pl3': '20:30',
+  'qxc': '20:30'
 }
 
 const onLotteryTypeChange = async () => {
   if (!form.lottery_type) return
   
-  // 获取最近一次开奖时间作为默认值
-  try {
-    const res = await axios.get(`/api/lottery/${form.lottery_type}`, {
-      headers: { Authorization: getToken() }
-    })
-    if (res.data.latest?.date) {
-      // 转换为 datetime-local 格式
-      const date = new Date(res.data.latest.date)
-      form.draw_time = date.toISOString().slice(0, 16)
-    }
-  } catch (e) {
-    // 忽略错误
-  }
+  // 默认开奖时间：今天 + 该彩种开奖时间
+  const today = new Date()
+  const drawTime = LOTTERY_DRAW_TIME[form.lottery_type] || '21:00'
+  const [hour, minute] = drawTime.split(':')
+  today.setHours(parseInt(hour), parseInt(minute), 0, 0)
+  form.draw_time = today.toISOString().slice(0, 16)
   
   // 清空号码错误提示
   codeError.value = ''
@@ -307,7 +355,65 @@ const handleDelete = async (id) => {
 
 const handleLogout = () => {
   localStorage.removeItem('admin_token')
-  router.push('/admin')
+  router.push('/x7k9m2')
+}
+
+const switchTab = (key) => {
+  searchType.value = key
+  searchIssue.value = ''
+  fetchData()
+}
+
+const fetchAnnouncements = async () => {
+  const res = await axios.get('/api/admin/announcements', {
+    headers: { Authorization: getToken() }
+  })
+  annList.value = res.data
+}
+
+const handleAnnSubmit = async () => {
+  if (!annForm.content) {
+    alert('请填写内容')
+    return
+  }
+  annSubmitting.value = true
+  try {
+    if (annEditingId.value) {
+      await axios.put(`/api/admin/announcements/${annEditingId.value}`, annForm, {
+        headers: { Authorization: getToken() }
+      })
+    } else {
+      await axios.post('/api/admin/announcements', annForm, {
+        headers: { Authorization: getToken() }
+      })
+    }
+    cancelAnnEdit()
+    fetchAnnouncements()
+  } catch (e) {
+    alert(e.response?.data?.error || '操作失败')
+  } finally {
+    annSubmitting.value = false
+  }
+}
+
+const handleAnnEdit = (item) => {
+  annEditingId.value = item.id
+  annForm.content = item.content
+  annForm.enabled = item.enabled
+}
+
+const cancelAnnEdit = () => {
+  annEditingId.value = null
+  annForm.content = ''
+  annForm.enabled = true
+}
+
+const handleAnnDelete = async (id) => {
+  if (!confirm('确定删除？')) return
+  await axios.delete(`/api/admin/announcements/${id}`, {
+    headers: { Authorization: getToken() }
+  })
+  fetchAnnouncements()
 }
 
 const handleChangePassword = async () => {
@@ -351,6 +457,7 @@ const formatDate = (date) => {
 
 onMounted(() => {
   fetchData()
+  fetchAnnouncements()
 })
 </script>
 

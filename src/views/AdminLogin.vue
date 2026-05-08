@@ -40,7 +40,7 @@ const handleLogin = async () => {
     if (res.data.ok) {
       // 登录成功，保存token
       localStorage.setItem('admin_token', res.data.token)
-      router.push('/admin/lottery')
+      router.push('/x7k9m2/lottery')
     }
   } catch (e) {
     error.value = e.response?.data?.error || '登录失败'

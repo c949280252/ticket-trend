@@ -1,5 +1,6 @@
 <template>
   <div class="home">
+    <AnnouncementBar />
     <div class="container">
       <!-- 最新开奖 -->
       <div class="latest-box" v-if="lotteryList.length > 0">
@@ -43,6 +44,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import AnnouncementBar from '../components/AnnouncementBar.vue'
 
 const router = useRouter()
 const lotteryList = ref([])

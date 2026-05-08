@@ -16,12 +16,12 @@ const routes = [
     component: Detail
   },
   {
-    path: '/admin',
+    path: '/x7k9m2',
     name: 'AdminLogin',
     component: AdminLogin
   },
   {
-    path: '/admin/lottery',
+    path: '/x7k9m2/lottery',
     name: 'AdminLottery',
     component: AdminLottery
   }
