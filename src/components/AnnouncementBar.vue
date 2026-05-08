@@ -2,11 +2,8 @@
   <div class="announcement-bar" v-if="announcements.length > 0">
     <span class="label">公告：</span>
     <div class="marquee-wrapper">
-      <div class="marquee-content" ref="contentRef">
+      <div class="marquee-content">
         <span v-for="item in announcements" :key="item.id" class="announcement-text">
-          {{ item.content }}
-        </span>
-        <span v-for="item in announcements" :key="'dup-' + item.id" class="announcement-text">
           {{ item.content }}
         </span>
       </div>
@@ -15,37 +12,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
 const announcements = ref([])
-const contentRef = ref(null)
-
-const SPEED = 30 // 30px/秒
 
 onMounted(async () => {
   try {
     const res = await axios.get('/api/announcements')
     announcements.value = res.data
-    
-    await nextTick()
-    setTimeout(calcSpeed, 100)
   } catch (e) {
     // ignore
   }
 })
-
-function calcSpeed() {
-  if (!contentRef.value) return
-  
-  // 内容宽度（两份）
-  const totalWidth = contentRef.value.offsetWidth
-  // 一个内容的宽度
-  const oneWidth = totalWidth / 2
-  // 时间 = 宽度 / 速度
-  const duration = oneWidth / SPEED
-  contentRef.value.style.animationDuration = duration + 's'
-}
 </script>
 
 <style scoped>
@@ -74,7 +53,7 @@ function calcSpeed() {
 }
 
 .marquee-content {
-  display: flex;
+  display: inline-flex;
   white-space: nowrap;
   animation: scroll-left 20s linear infinite;
   will-change: transform;
@@ -91,7 +70,7 @@ function calcSpeed() {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(-100%);
   }
 }
 </style>
