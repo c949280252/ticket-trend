@@ -24,7 +24,15 @@
         <div class="trend-content" v-show="currentTab === 'freq'">
           <div class="freq-chart">
             <div class="freq-header">
-              <span>号码出现频率（前{{ maxShow }}）</span>
+              <div class="freq-opts">
+                <span>近</span>
+                <select v-model="showCount" @change="fetchData(true)" class="period-select">
+                  <option :value="20">20期</option>
+                  <option :value="50">50期</option>
+                  <option :value="100">100期</option>
+                </select>
+                <span>开奖号码频率</span>
+              </div>
               <span class="freq-total">共{{ totalCountFinal }}期</span>
             </div>
             <div class="freq-bars">
@@ -42,7 +50,15 @@
         <div class="trend-content" v-show="currentTab === 'trend'">
           <div class="trend-chart">
             <div class="trend-header">
-              <span>近{{ showCount }}期开奖走势</span>
+              <div class="freq-opts">
+                <span>近</span>
+                <select v-model="showCount" @change="fetchData(true)" class="period-select">
+                  <option :value="20">20期</option>
+                  <option :value="50">50期</option>
+                  <option :value="100">100期</option>
+                </select>
+                <span>开奖走势</span>
+              </div>
             </div>
             <div class="trend-matrix" v-if="trendListFinal.length > 0">
               <div class="matrix-cols">
@@ -111,7 +127,7 @@ watch(() => route.path, (path) => {
 })
 
 const codeLen = ref(7)
-const showCount = ref(10)
+const showCount = ref(20)
 const maxShow = ref(10)
 
 const LOTTERY_CONFIG = {
@@ -356,9 +372,25 @@ onMounted(() => {
 .freq-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 0.8rem;
   color: #666;
   margin-bottom: 0.75rem;
+}
+
+.freq-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.period-select {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #333;
+  background: #fff;
 }
 
 .freq-total {
