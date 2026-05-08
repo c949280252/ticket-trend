@@ -250,14 +250,31 @@ const LOTTERY_DRAW_TIME = {
   'qxc': '20:30'
 }
 
-const onLotteryTypeChange = () => {
+const onLotteryTypeChange = async () => {
   if (!form.lottery_type) return
   
-  const today = new Date()
-  const drawTime = LOTTERY_DRAW_TIME[form.lottery_type] || '21:00'
-  const [hour, minute] = drawTime.split(':')
-  today.setHours(parseInt(hour), parseInt(minute), 0, 0)
-  form.draw_time = today.toISOString().slice(0, 16)
+  // 获取该彩种最近一次开奖时间
+  try {
+    const res = await axios.get(`/api/lottery/${form.lottery_type}`)
+    if (res.data.latest?.date) {
+      // 解析最近开奖时间的时分
+      const latestDate = new Date(res.data.latest.date)
+      const hour = latestDate.getHours()
+      const minute = latestDate.getMinutes()
+      
+      // 用今天的日期 + 最近开奖的时分
+      const today = new Date()
+      today.setHours(hour, minute, 0, 0)
+      form.draw_time = today.toISOString().slice(0, 16)
+    }
+  } catch (e) {
+    // 如果获取失败，使用默认时间
+    const today = new Date()
+    const drawTime = LOTTERY_DRAW_TIME[form.lottery_type] || '21:00'
+    const [hour, minute] = drawTime.split(':')
+    today.setHours(parseInt(hour), parseInt(minute), 0, 0)
+    form.draw_time = today.toISOString().slice(0, 16)
+  }
   codeError.value = ''
 }
 
