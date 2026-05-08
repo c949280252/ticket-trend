@@ -203,7 +203,7 @@ app.get('/api/lottery/:id/history', async (req, res) => {
 })
 
 // ========== 后台管理 ==========
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123'
+const ADMIN_PASSWORD = process.env.admin_password || 'admin123'
 
 // 生成简单token（实际项目用jwt）
 function makeToken(password, time) {
