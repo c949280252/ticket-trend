@@ -62,10 +62,16 @@
             </div>
             <div class="trend-matrix" v-if="trendListFinal.length > 0">
               <div class="matrix-cols">
+                <span class="matrix-header-issue">期号</span>
+                <span class="matrix-header-balls">开奖</span>
                 <span v-for="n in 10" :key="n" class="matrix-header-num">{{ n - 1 }}</span>
+                <span class="matrix-header-issue">出现</span>
               </div>
               <div v-for="(item, idx) in trendListFinal" :key="item.issue" class="matrix-row">
                 <span class="matrix-issue">{{ item.issue.slice(-4) }}</span>
+                <span class="matrix-balls">
+                  <span v-for="(ball, i) in item.balls" :key="i" class="matrix-ball">{{ ball }}</span>
+                </span>
                 <span 
                   v-for="n in 10" 
                   :key="n" 
@@ -75,6 +81,7 @@
               </div>
               <div class="matrix-totals">
                 <span class="matrix-totals-label">出现</span>
+                <span class="matrix-totals-balls">-</span>
                 <span v-for="n in 10" :key="n" class="matrix-total-num">{{ getCount(n - 1) }}</span>
               </div>
             </div>
@@ -464,9 +471,25 @@ onMounted(() => {
 
 .matrix-cols {
   display: flex;
-  padding-left: 55px;
   gap: 3px;
   margin-bottom: 4px;
+}
+
+.matrix-header-issue {
+  width: 45px;
+  font-size: 0.7rem;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.matrix-header-balls {
+  flex: 1;
+  min-width: 60px;
+  max-width: 80px;
+  font-size: 0.7rem;
+  color: #999;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .matrix-header-num {
@@ -484,10 +507,22 @@ onMounted(() => {
 }
 
 .matrix-issue {
-  width: 55px;
-  font-size: 0.75rem;
+  width: 45px;
+  font-size: 0.7rem;
   color: #666;
   flex-shrink: 0;
+}
+
+.matrix-balls {
+  display: flex;
+  gap: 2px;
+  margin-right: 3px;
+}
+
+.matrix-ball {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #333;
 }
 
 .matrix-cell {
@@ -526,16 +561,25 @@ onMounted(() => {
   margin-top: 6px;
   padding-top: 6px;
   border-top: 1px solid #ddd;
-  justify-content: flex-start;
 }
 
 .matrix-totals-label {
-  width: 55px;
-  font-size: 0.75rem;
+  width: 45px;
+  font-size: 0.7rem;
   color: #999;
   flex-shrink: 0;
   text-align: right;
-  padding-right: 5px;
+  padding-right: 3px;
+}
+
+.matrix-totals-balls {
+  flex: 1;
+  min-width: 60px;
+  max-width: 80px;
+  font-size: 0.7rem;
+  color: #999;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .matrix-total-num {
