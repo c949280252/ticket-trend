@@ -42,22 +42,16 @@
         <div class="trend-content" v-show="currentTab === 'trend'">
           <div class="trend-chart">
             <div class="trend-header">
-              <span>近{{ showCount }}期各位置号码分布</span>
+              <span>近{{ showCount }}期开奖走势</span>
             </div>
-            <div class="pos-grid">
-              <div v-for="pos in posBalls" :key="pos.index" class="pos-col">
-                <div class="pos-title">第{{ pos.index }}位</div>
-                <div class="pos-balls">
-                  <div 
-                    v-for="ball in pos.balls" 
-                    :key="ball.num"
-                    class="pos-ball"
-                    :style="{ background: ball.color, opacity: ball.opacity }"
-                    :title="ball.num + ': ' + ball.count + '次'"
-                  >
-                    {{ ball.num }}
-                  </div>
-                </div>
+            <div class="trend-table">
+              <div class="trend-thead">
+                <span class="th-issue">期号</span>
+                <span v-for="i in codeLen" :key="i" class="th-pos">第{{ i }}位</span>
+              </div>
+              <div v-for="item in trendListFinal" :key="item.issue" class="trend-row">
+                <span class="td-issue">{{ item.issue }}</span>
+                <span v-for="(ball, i) in item.balls" :key="i" class="td-ball" :style="{ background: getBallBg(ball, i) }">{{ ball }}</span>
               </div>
             </div>
           </div>
@@ -177,6 +171,10 @@ const getBallColor = (ball) => {
   if (num <= 23) return '#8b5cf6'
   if (num <= 30) return '#ec4899'
   return '#06b6d4'
+}
+
+const getBallBg = (ball, posIndex) => {
+  return getBallColor(ball)
 }
 
 const fetchData = async (reset = false) => {
@@ -403,39 +401,42 @@ onMounted(() => {
   text-align: right;
 }
 
-.pos-grid {
-  display: flex;
-  gap: 0.5rem;
+.trend-table {
   overflow-x: auto;
-  padding-bottom: 0.5rem;
 }
 
-.pos-col {
-  min-width: 80px;
+.trend-thead {
+  display: flex;
+  font-size: 0.7rem;
+  color: #999;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.th-issue, .td-issue {
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.th-pos, .td-ball {
+  width: 28px;
+  flex-shrink: 0;
   text-align: center;
 }
 
-.pos-title {
-  font-size: 0.75rem;
-  color: #666;
-  margin-bottom: 0.5rem;
-}
-
-.pos-balls {
+.trend-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  justify-content: center;
+  align-items: center;
+  padding: 0.25rem 0;
 }
 
-.pos-ball {
-  width: 24px;
+.td-ball {
   height: 24px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: bold;
   color: #fff;
 }
