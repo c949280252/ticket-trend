@@ -63,7 +63,7 @@
             <div class="trend-matrix" v-if="trendListFinal.length > 0">
               <div class="matrix-cols">
                 <span class="matrix-header-issue">期号</span>
-                <span v-for="n in maxBall + 1" :key="n" class="matrix-header-num">{{ n - 1 }}</span>
+                <span v-for="n in maxBall + 1" :key="n" class="matrix-header-num">{{ hasZero ? (n - 1) : n }}</span>
               </div>
               <div v-for="(item, idx) in trendListFinal" :key="item.issue" class="matrix-row">
                 <span class="matrix-issue">{{ item.issue }}</span>
@@ -71,12 +71,12 @@
                   v-for="n in maxBall + 1" 
                   :key="n" 
                   class="matrix-cell"
-                  :class="getCellClass(item.balls, n - 1)"
-                >{{ hasBall(item.balls, n - 1) ? (n - 1) : '' }}</span>
+                  :class="getCellClass(item.balls, hasZero ? (n - 1) : n)"
+                >{{ hasBall(item.balls, hasZero ? (n - 1) : n) ? (hasZero ? (n - 1) : n) : '' }}</span>
               </div>
               <div class="matrix-totals">
                 <span class="matrix-totals-label">出现</span>
-                <span v-for="n in maxBall + 1" :key="n" class="matrix-total-num">{{ getCount(n - 1) }}</span>
+                <span v-for="n in maxBall + 1" :key="n" class="matrix-total-num">{{ getCount(hasZero ? (n - 1) : n) }}</span>
               </div>
             </div>
             <div v-else class="no-data">暂无数据</div>
@@ -133,14 +133,19 @@ const maxShow = ref(10)
 const maxBall = ref(9)  // 最大号码
 
 const LOTTERY_CONFIG = {
-  '3d': { len: 3, max: 9 },
-  'ssq': { len: 6, max: 33 },
-  'dlt': { len: 5, max: 35 },
-  'qlc': { len: 7, max: 30 },
-  'plw': { len: 5, max: 9 },
-  'pl3': { len: 3, max: 9 },
-  'qxc': { len: 7, max: 9 }
+  '3d': { len: 3, max: 9, hasZero: true },
+  'ssq': { len: 6, max: 33, hasZero: false },
+  'dlt': { len: 5, max: 35, hasZero: false },
+  'qlc': { len: 7, max: 30, hasZero: false },
+  'plw': { len: 5, max: 9, hasZero: true },
+  'pl3': { len: 3, max: 9, hasZero: true },
+  'qxc': { len: 7, max: 9, hasZero: true }
 }
+
+// 是否包含0
+const hasZero = computed(() => {
+  return LOTTERY_CONFIG[lotteryId.value]?.hasZero ?? true
+})
 
 const freqListFinal = computed(() => {
   const counts = {}
