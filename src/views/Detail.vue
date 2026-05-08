@@ -42,16 +42,22 @@
         <div class="trend-content" v-show="currentTab === 'trend'">
           <div class="trend-chart">
             <div class="trend-header">
-              <span>近{{ showCount }}期开奖走势</span>
+              <span>近{{ showCount }}期各位置号码分布</span>
             </div>
-            <div class="trend-grid">
-              <div class="trend-row header">
-                <span class="trend-issue">期号</span>
-                <span v-for="i in codeLen" :key="i" class="trend-pos">第{{ i }}位</span>
-              </div>
-              <div v-for="item in trendListFinal" :key="item.issue" class="trend-row">
-                <span class="trend-issue">{{ item.issue }}</span>
-                <span v-for="(ball, i) in item.balls" :key="i" class="trend-ball" :style="{ background: getBallColor(ball) }">{{ ball }}</span>
+            <div class="pos-grid">
+              <div v-for="pos in posBalls" :key="pos.index" class="pos-col">
+                <div class="pos-title">第{{ pos.index }}位</div>
+                <div class="pos-balls">
+                  <div 
+                    v-for="ball in pos.balls" 
+                    :key="ball.num"
+                    class="pos-ball"
+                    :style="{ background: ball.color, opacity: ball.opacity }"
+                    :title="ball.num + ': ' + ball.count + '次'"
+                  >
+                    {{ ball.num }}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -135,6 +141,32 @@ const freqListFinal = computed(() => {
 const totalCountFinal = computed(() => history.value.length)
 
 const trendListFinal = computed(() => history.value.slice(0, showCount.value).reverse())
+
+// 按位置统计走势
+const posBalls = computed(() => {
+  const data = history.value.slice(0, showCount.value)
+  const posStats = []
+  
+  for (let p = 0; p < codeLen.value; p++) {
+    const counts = {}
+    data.forEach(item => {
+      const ball = item.balls?.[p]
+      if (ball) counts[ball] = (counts[ball] || 0) + 1
+    })
+    const list = Object.entries(counts).map(([num, count]) => ({ num, count })).sort((a, b) => a.num.localeCompare(b.num))
+    const max = list[0]?.count || 1
+    posStats.push({
+      index: p + 1,
+      balls: list.map(item => ({
+        num: item.num,
+        count: item.count,
+        opacity: Math.max(0.3, item.count / max),
+        color: getBallColor(item.num)
+      }))
+    })
+  }
+  return posStats
+})
 
 const getBallColor = (ball) => {
   const num = parseInt(ball) || 0
@@ -371,55 +403,41 @@ onMounted(() => {
   text-align: right;
 }
 
-.trend-header {
-  font-size: 0.85rem;
-  color: #666;
-  margin-bottom: 0.75rem;
-}
-
-.trend-grid {
+.pos-grid {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
 }
 
-.trend-row {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.trend-row.header {
-  font-size: 0.7rem;
-  color: #999;
-}
-
-.trend-issue {
-  width: 60px;
-  font-size: 0.7rem;
-  color: #666;
-  flex-shrink: 0;
-}
-
-.trend-pos {
-  width: 28px;
-  font-size: 0.65rem;
-  color: #999;
+.pos-col {
+  min-width: 80px;
   text-align: center;
-  flex-shrink: 0;
 }
 
-.trend-ball {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+.pos-title {
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.pos-balls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.pos-ball {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
   font-weight: bold;
   color: #fff;
-  flex-shrink: 0;
 }
 
 .history {
