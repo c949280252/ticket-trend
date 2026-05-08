@@ -2,7 +2,7 @@
   <div class="announcement-bar" v-if="announcements.length > 0">
     <span class="label">公告：</span>
     <div class="marquee-wrapper">
-      <div class="marquee-content">
+      <div class="marquee-content" ref="contentRef">
         <span v-for="item in announcements" :key="item.id" class="announcement-text">
           {{ item.content }}
         </span>
@@ -12,19 +12,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import axios from 'axios'
 
 const announcements = ref([])
+const contentRef = ref(null)
+
+const SPEED = 50 // 50px/秒
 
 onMounted(async () => {
   try {
     const res = await axios.get('/api/announcements')
     announcements.value = res.data
+    
+    await nextTick()
+    setTimeout(calcDuration, 200)
   } catch (e) {
     // ignore
   }
 })
+
+function calcDuration() {
+  if (!contentRef.value) return
+  const width = contentRef.value.offsetWidth
+  if (width > 0) {
+    const duration = width / SPEED
+    contentRef.value.style.animationDuration = duration + 's'
+  }
+}
 </script>
 
 <style scoped>
@@ -66,7 +81,7 @@ onMounted(async () => {
   0% {
     transform: translateX(100vw);
   }
-  100% {
+  to {
     transform: translateX(-100%);
   }
 }
