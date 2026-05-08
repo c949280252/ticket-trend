@@ -44,16 +44,22 @@
             <div class="trend-header">
               <span>近{{ showCount }}期开奖走势</span>
             </div>
-            <div class="trend-table">
+            <div class="trend-table" v-if="trendListFinal.length > 0">
               <div class="trend-thead">
                 <span class="th-issue">期号</span>
                 <span v-for="i in codeLen" :key="i" class="th-pos">第{{ i }}位</span>
               </div>
-              <div v-for="item in trendListFinal" :key="item.issue" class="trend-row">
+              <div 
+                v-for="item in trendListFinal" 
+                :key="item.issue" 
+                class="trend-row"
+                :style="{ background: item === trendListFinal[0] ? '#fff5f5' : 'transparent' }"
+              >
                 <span class="td-issue">{{ item.issue }}</span>
-                <span v-for="(ball, i) in item.balls" :key="i" class="td-ball" :style="{ background: getBallBg(ball, i) }">{{ ball }}</span>
+                <span v-for="(ball, i) in item.balls" :key="i" class="td-ball" :style="{ background: getBallColor(ball) }">{{ ball }}</span>
               </div>
             </div>
+            <div v-else class="no-data">暂无数据</div>
           </div>
         </div>
         
@@ -171,10 +177,6 @@ const getBallColor = (ball) => {
   if (num <= 23) return '#8b5cf6'
   if (num <= 30) return '#ec4899'
   return '#06b6d4'
-}
-
-const getBallBg = (ball, posIndex) => {
-  return getBallColor(ball)
 }
 
 const fetchData = async (reset = false) => {
@@ -403,23 +405,27 @@ onMounted(() => {
 
 .trend-table {
   overflow-x: auto;
+  border: 1px solid #eee;
+  border-radius: 8px;
 }
 
 .trend-thead {
   display: flex;
+  background: #f5f5f5;
   font-size: 0.7rem;
-  color: #999;
+  color: #666;
   padding: 0.5rem 0;
   border-bottom: 1px solid #eee;
 }
 
 .th-issue, .td-issue {
-  width: 60px;
+  width: 70px;
   flex-shrink: 0;
+  padding-left: 0.5rem;
 }
 
 .th-pos, .td-ball {
-  width: 28px;
+  width: 30px;
   flex-shrink: 0;
   text-align: center;
 }
@@ -427,16 +433,21 @@ onMounted(() => {
 .trend-row {
   display: flex;
   align-items: center;
-  padding: 0.25rem 0;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.trend-row:last-child {
+  border-bottom: none;
 }
 
 .td-ball {
-  height: 24px;
+  height: 26px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: bold;
   color: #fff;
 }
