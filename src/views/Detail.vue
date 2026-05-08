@@ -72,7 +72,7 @@
                   :key="n" 
                   class="matrix-cell"
                   :class="getCellClass(item.balls, n - 1)"
-                >{{ item.balls.includes(String(n - 1)) ? (n - 1) : '' }}</span>
+                >{{ hasBall(item.balls, n - 1) ? (n - 1) : '' }}</span>
               </div>
               <div class="matrix-totals">
                 <span class="matrix-totals-label">出现</span>
@@ -182,9 +182,9 @@ const posMatrix = computed(() => {
 const getCount = (num) => {
   let count = 0
   history.value.slice(0, showCount.value).forEach(item => {
-    if (item.balls?.includes(String(num))) {
-      // 统计出现次数：普通+1，二同号+2，三同号+3，四次+4，五次+5，六次+6，七次+7
-      const ballCount = item.balls.filter(b => b === String(num)).length
+    if (item.balls) {
+      // 转换为数字比较，处理01和1的情况
+      const ballCount = item.balls.filter(b => parseInt(b) === num).length
       count += ballCount
     }
   })
@@ -192,14 +192,22 @@ const getCount = (num) => {
 }
 
 const getCellClass = (balls, num) => {
-  if (!balls.includes(String(num))) return {}
-  const count = balls.filter(b => b === String(num)).length
+  if (!balls) return {}
+  // 转换为数字比较
+  const hasNum = balls.some(b => parseInt(b) === num)
+  if (!hasNum) return {}
+  const count = balls.filter(b => parseInt(b) === num).length
   if (count >= 6) return { filled: true, repeat6: true }
   if (count >= 5) return { filled: true, repeat5: true }
   if (count >= 4) return { filled: true, repeat4: true }
   if (count === 3) return { filled: true, triple: true }
   if (count === 2) return { filled: true, double: true }
   return { filled: true }
+}
+
+const hasBall = (balls, num) => {
+  if (!balls) return false
+  return balls.some(b => parseInt(b) === num)
 }
 
 const getBallColor = (ball) => {
