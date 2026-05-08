@@ -293,17 +293,16 @@ app.get('/api/admin/lottery', requireAuth, async (req, res) => {
   const limitNum = parseInt(limit) || 20
   const offsetNum = (parseInt(page) - 1) * limitNum
   
-  let sqlQuery = 'SELECT * FROM lottery_history WHERE 1=1'
-  
-  if (type) {
-    sqlQuery += ` AND lottery_type = '${type}'`
+  let result
+  if (type && issue) {
+    result = await sql`SELECT * FROM lottery_history WHERE lottery_type = ${type} AND issue LIKE ${'%' + issue + '%'} ORDER BY id DESC LIMIT ${limitNum} OFFSET ${offsetNum}`
+  } else if (type) {
+    result = await sql`SELECT * FROM lottery_history WHERE lottery_type = ${type} ORDER BY id DESC LIMIT ${limitNum} OFFSET ${offsetNum}`
+  } else if (issue) {
+    result = await sql`SELECT * FROM lottery_history WHERE issue LIKE ${'%' + issue + '%'} ORDER BY id DESC LIMIT ${limitNum} OFFSET ${offsetNum}`
+  } else {
+    result = await sql`SELECT * FROM lottery_history ORDER BY id DESC LIMIT ${limitNum} OFFSET ${offsetNum}`
   }
-  if (issue) {
-    sqlQuery += ` AND issue LIKE '%${issue}%'`
-  }
-  sqlQuery += ` ORDER BY id DESC LIMIT ${limitNum} OFFSET ${offsetNum}`
-  
-  const result = await sql`${sqlQuery}`.catch(() => sql`SELECT * FROM lottery_history ORDER BY id DESC LIMIT ${limitNum}`)
   res.json(result.rows)
 })
 
