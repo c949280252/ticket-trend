@@ -10,43 +10,9 @@
       </div>
     </div>
 
-    <!-- 开奖管理 -->
+<!-- 开奖管理 -->
     <template v-if="currentTab === 'lottery'">
-      <div class="history-header">
-        <select v-model="historyType">
-          <option value="">全部彩种</option>
-          <option v-for="(config, key) in LOTTERY_CONFIG" :key="key" :value="key">
-            {{ config.name }}
-          </option>
-        </select>
-        <button @click="fetchHistory">查询</button>
-      </div>
-      <div class="table-box">
-        <table>
-          <thead>
-            <tr>
-              <th>彩种</th>
-              <th>期号</th>
-              <th>开奖号码</th>
-              <th>开奖时间</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in historyList" :key="item.id">
-              <td>{{ getLotteryName(item.lottery_type) }}</td>
-              <td>{{ item.issue }}</td>
-              <td>{{ item.code }}</td>
-              <td>{{ item.draw_time }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div v-if="historyList.length === 0" class="empty">暂无数据</div>
-    </div>
-
-    <!-- 管理页面 -->
-    <template v-else>
-      <!-- 添加/编辑表单 -->
+      <!-- 添加表单 -->
       <div class="form-box">
         <h3>{{ editingId ? '编辑开奖' : '添加开奖' }}</h3>
         <div class="form-row">
