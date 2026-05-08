@@ -22,6 +22,24 @@ const LOTTERY_CONFIG = {
 
 // ========== 数据库操作 ==========
 
+// 迁移：修复历史数据格式
+async function migrateData() {
+  let fixed = 0
+  // 修复排列三：补逗号
+  const pl3Data = await sql`SELECT id, code FROM lottery_history WHERE lottery_type = 'pl3'`
+  for (const row of pl3Data.rows) {
+    if (!row.code.includes(',')) {
+      const digits = row.code.replace(/,/g, '')
+      if (digits.length === 3) {
+        const formatted = digits.split('').join(',')
+        await sql`UPDATE lottery_history SET code = ${formatted} WHERE id = ${row.id}`
+        fixed++
+      }
+    }
+  }
+  console.log(`迁移完成，修复 ${fixed} 条排列三数据`)
+}
+
 // 清理数据：每个彩种保留最多2000条
 async function cleanupOldData() {
   for (const lotteryType of Object.keys(LOTTERY_CONFIG)) {
@@ -470,7 +488,7 @@ app.delete('/api/admin/announcements/:id', requireAuth, async (req, res) => {
   res.json({ ok: true })
 })
 
-// 启动时初始化admin_settings
-initAdminSettings().catch(console.error)
+// 启动时初始化
+initAdminSettings().then(migrateData).catch(console.error)
 
 export default (req, res) => app(req, res)
