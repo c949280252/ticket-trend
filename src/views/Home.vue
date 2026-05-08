@@ -1,8 +1,34 @@
 <template>
   <div class="home">
     <div class="container">
+      <!-- 统计数据 -->
+      <div class="stats-section">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-value">{{ stats.totalRecords }}</div>
+            <div class="stat-label">开奖数据</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">{{ stats.totalUsers }}</div>
+            <div class="stat-label">活跃用户</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">{{ stats.todayDraws }}</div>
+            <div class="stat-label">今日开奖</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">{{ stats.totalPrizes }}</div>
+            <div class="stat-label">中奖次数</div>
+          </div>
+        </div>
+      </div>
+
       <!-- 最新开奖 -->
       <div class="latest-box" v-if="lotteryList.length > 0">
+        <div class="section-header">
+          <h3 class="section-title">最新开奖</h3>
+          <span class="section-tag">每日更新</span>
+        </div>
         <div class="lottery-header">
           <span class="lottery-name">{{ lotteryList[0].name }}</span>
           <span class="lottery-issue">第{{ lotteryList[0].latestIssue }}期</span>
@@ -17,22 +43,65 @@
         <div class="lottery-date">{{ formatDate(lotteryList[0].date) }}</div>
       </div>
 
+      <!-- 热门推荐 -->
+      <div class="hot-section">
+        <div class="section-header">
+          <h3 class="section-title">热门推荐</h3>
+          <span class="section-more">更多 ></span>
+        </div>
+        <div class="hot-grid">
+          <div class="hot-card" v-for="item in hotList" :key="item.id" @click="goDetail(item.id)">
+            <div class="hot-icon" :style="{ background: item.color }">
+              <span>{{ item.name.charAt(0) }}</span>
+            </div>
+            <div class="hot-info">
+              <div class="hot-name">{{ item.name }}</div>
+              <div class="hot-issue">第{{ item.latestIssue }}期 · {{ item.hotScore }}人看过</div>
+            </div>
+            <div class="hot-arrow">></div>
+          </div>
+        </div>
+      </div>
+
       <!-- 导航列表 -->
-      <div class="nav-list">
-        <div
-          class="nav-item"
-          v-for="item in lotteryList"
-          :key="item.id"
-          @click="goDetail(item.id)"
-        >
-          <div class="nav-info">
-            <span class="nav-name">{{ item.name }}</span>
-            <span class="nav-issue">第{{ item.latestIssue }}期</span>
+      <div class="nav-section">
+        <div class="section-header">
+          <h3 class="section-title">全部彩种</h3>
+        </div>
+        <div class="nav-list">
+          <div
+            class="nav-item"
+            v-for="item in lotteryList"
+            :key="item.id"
+            @click="goDetail(item.id)"
+          >
+            <div class="nav-info">
+              <span class="nav-name">{{ item.name }}</span>
+              <span class="nav-issue">第{{ item.latestIssue }}期</span>
+            </div>
+            <div class="nav-balls">
+              <span v-for="(ball, i) in item.balls" :key="i" class="ball-small">{{ ball }}</span>
+            </div>
+            <span class="arrow">></span>
           </div>
-          <div class="nav-balls">
-            <span v-for="(ball, i) in item.balls" :key="i" class="ball-small">{{ ball }}</span>
-          </div>
-          <span class="arrow">></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部信息 -->
+    <div class="footer">
+      <div class="footer-content">
+        <div class="footer-logo">彩票开奖网</div>
+        <div class="footer-desc">专业彩票开奖数据查询平台</div>
+        <div class="footer-links">
+          <span>关于我们</span>
+          <span class="divider">|</span>
+          <span>联系我们</span>
+          <span class="divider">|</span>
+          <span>服务条款</span>
+        </div>
+        <div class="footer-copyright">
+          © 2024 彩票开奖网 · 鲁ICP备XXXXXXXX号
         </div>
       </div>
     </div>
@@ -40,14 +109,31 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import AnnouncementBar from '../components/AnnouncementBar.vue'
+import axios from 'axios'
 
 const router = useRouter()
 const lotteryList = ref([])
 let timer = null
+
+// 统计数据（模拟）
+const stats = ref({
+  totalRecords: '50,000+',
+  totalUsers: '128,000+',
+  todayDraws: '7',
+  totalPrizes: '1,200,000+'
+})
+
+// 热门推荐（基于彩种数据）
+const hotList = computed(() => {
+  return lotteryList.value.slice(0, 4).map((item, index) => ({
+    ...item,
+    color: ['#e63946', '#1a56a8', '#2d9cdb', '#f59e0b'][index % 4],
+    hotScore: Math.floor(Math.random() * 1000) + 500
+  }))
+})
 
 const fetchData = async () => {
   try {
@@ -60,7 +146,6 @@ const fetchData = async () => {
 
 const formatDate = (date) => {
   if (!date) return ''
-  // 只取日期部分，不转时区
   return date.split('T')[0]
 }
 
@@ -80,7 +165,8 @@ onUnmounted(() => {
 
 <style scoped>
 .home {
-  padding: 0.5rem 0;
+  padding-bottom: 2rem;
+  background: #f5f7fa;
 }
 
 .container {
@@ -89,13 +175,69 @@ onUnmounted(() => {
   padding: 0 0.75rem;
 }
 
+/* 统计 */
+.stats-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #e63946;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: #999;
+  margin-top: 0.25rem;
+}
+
+/* 区块标题 */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.section-tag {
+  font-size: 0.7rem;
+  color: #e63946;
+  background: rgba(230,57,70,0.1);
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+}
+
+.section-more {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+/* 最新开奖 */
 .latest-box {
   background: #fff;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1.25rem;
   text-align: center;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .lottery-header {
@@ -113,32 +255,32 @@ onUnmounted(() => {
 }
 
 .lottery-issue {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #666;
   background: #f5f5f5;
-  padding: 0.25rem 0.75rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 20px;
 }
 
 .balls {
   display: flex;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
   margin-bottom: 1rem;
 }
 
 .ball {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: bold;
   color: #fff;
   background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
-  box-shadow: 0 4px 8px rgba(230, 57, 70, 0.3);
+  box-shadow: 0 3px 6px rgba(230,57,70,0.3);
 }
 
 .lottery-date {
@@ -146,11 +288,81 @@ onUnmounted(() => {
   color: #999;
 }
 
+/* 热门推荐 */
+.hot-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.hot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.hot-card {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hot-card:active {
+  background: #f0f0f0;
+}
+
+.hot-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem;
+}
+
+.hot-icon span {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.hot-info {
+  flex: 1;
+}
+
+.hot-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.hot-issue {
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.hot-arrow {
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+/* 导航 */
+.nav-section {
+  margin-top: 0.5rem;
+}
+
 .nav-list {
   background: #fff;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .nav-item {
@@ -159,7 +371,6 @@ onUnmounted(() => {
   padding: 1rem;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
-  transition: background 0.2s;
 }
 
 .nav-item:last-child {
@@ -193,13 +404,13 @@ onUnmounted(() => {
 }
 
 .ball-small {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: bold;
   color: #fff;
   background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
@@ -210,21 +421,75 @@ onUnmounted(() => {
   font-size: 1rem;
 }
 
-@media (min-width: 768px) {
-  .latest-box {
-    padding: 2rem;
-  }
+/* 底部 */
+.footer {
+  background: #2d2d2d;
+  padding: 2rem 1rem;
+  margin-top: 1rem;
+  text-align: center;
+}
 
-  .ball {
-    width: 72px;
-    height: 72px;
+.footer-logo {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.footer-desc {
+  font-size: 0.8rem;
+  color: #999;
+  margin-bottom: 1rem;
+}
+
+.footer-links {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.footer-links span {
+  cursor: pointer;
+}
+
+.footer-links .divider {
+  margin: 0 0.5rem;
+}
+
+.footer-copyright {
+  font-size: 0.7rem;
+  color: #555;
+}
+
+@media (min-width: 768px) {
+  .banner-wrapper {
+    height: 200px;
+  }
+  
+  .banner-content {
+    height: 200px;
+  }
+  
+  .banner-text h2 {
     font-size: 2rem;
   }
-
-  .ball-small {
-    width: 28px;
-    height: 28px;
-    font-size: 0.875rem;
+  
+  .stats-grid {
+    gap: 1rem;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .ball {
+    width: 56px;
+    height: 56px;
+    font-size: 1.5rem;
+  }
+  
+  .hot-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 </style>
