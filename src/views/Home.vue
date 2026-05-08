@@ -461,35 +461,97 @@ onUnmounted(() => {
   color: #555;
 }
 
-@media (min-width: 768px) {
-  .banner-wrapper {
-    height: 200px;
-  }
-  
-  .banner-content {
-    height: 200px;
-  }
-  
-  .banner-text h2 {
-    font-size: 2rem;
+@media (max-width: 380px) {
+  .container {
+    padding: 0 0.5rem;
   }
   
   .stats-grid {
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
   }
   
   .stat-value {
+    font-size: 1rem;
+  }
+  
+  .stat-label {
+    font-size: 0.65rem;
+  }
+  
+  .lottery-name {
+    font-size: 1rem;
+  }
+  
+  .ball {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+  
+  .hot-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hot-card {
+    padding: 0.5rem;
+  }
+  
+  .hot-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .footer-links .divider {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .stats-grid {
+    gap: 1.5rem;
+    padding: 1rem;
+  }
+  
+  .stat-value {
+    font-size: 1.75rem;
+  }
+  
+  .stat-label {
+    font-size: 0.85rem;
+  }
+  
+  .latest-box {
+    padding: 2rem;
+  }
+  
+  .lottery-name {
     font-size: 1.5rem;
   }
   
   .ball {
-    width: 56px;
-    height: 56px;
-    font-size: 1.5rem;
+    width: 60px;
+    height: 60px;
+    font-size: 1.75rem;
   }
   
   .hot-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .footer-content {
+    padding: 2rem;
   }
 }
 </style>
