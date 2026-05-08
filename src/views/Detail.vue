@@ -252,7 +252,7 @@ const loadMore = async () => {
   if (loading.value || !hasMore.value) return
   page.value++
   try {
-    const historyRes = await axios.get(`/api/lottery/${lotteryId}/history?limit=${PAGE_SIZE}&page=${page.value}`)
+    const historyRes = await axios.get(`/api/lottery/${lotteryId.value}/history?limit=${PAGE_SIZE}&page=${page.value}`)
     history.value = [...history.value, ...historyRes.data]
     hasMore.value = historyRes.data.length === PAGE_SIZE
   } catch (e) {
