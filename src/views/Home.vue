@@ -260,24 +260,23 @@ onUnmounted(() => {
 
 .trend-icon-item {
   flex: 1;
-  min-width: 60px;
-  max-width: 80px;
+  min-width: 55px;
+  max-width: 90px;
   height: 44px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 0 0.5rem;
+  padding: 0 0.25rem;
 }
 
 .trend-icon-text {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding: 0 2px;
 }
 
 /* 导航 */
@@ -317,10 +316,7 @@ onUnmounted(() => {
   font-size: 1rem;
   font-weight: 600;
   color: #333;
-  max-width: 120px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .nav-issue {
