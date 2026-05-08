@@ -319,8 +319,13 @@ onUnmounted(() => {
   display: flex;
   gap: 0.25rem;
   margin-right: 0.5rem;
-  flex-wrap: wrap;
-  max-width: 160px;
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 380px) {
+  .nav-balls {
+    flex-wrap: wrap;
+  }
 }
 
 .arrow {
