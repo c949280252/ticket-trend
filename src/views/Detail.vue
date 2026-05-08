@@ -44,22 +44,25 @@
             <div class="trend-header">
               <span>近{{ showCount }}期开奖走势</span>
             </div>
-            <div class="trend-matrix">
-              <div class="matrix-row header">
-                <span class="matrix-label"></span>
-                <span v-for="n in 10" :key="n" class="matrix-num">{{ n - 1 }}</span>
+            <div class="trend-matrix" v-if="trendListFinal.length > 0">
+              <div class="matrix-cols">
+                <span v-for="n in 10" :key="n" class="matrix-header-num">{{ n - 1 }}</span>
               </div>
-              <div v-for="pos in posMatrix" :key="pos.index" class="matrix-row">
-                <span class="matrix-label">第{{ pos.index }}位</span>
+              <div v-for="(item, idx) in trendListFinal" :key="item.issue" class="matrix-row">
+                <span class="matrix-issue">{{ item.issue.slice(-4) }}</span>
                 <span 
                   v-for="n in 10" 
                   :key="n" 
-                  class="matrix-cell" 
-                  :class="{ filled: pos.nums.includes(n - 1) }"
-                  :style="{ background: pos.nums.includes(n - 1) ? getBallColor(n - 1) : '#f5f5f5' }"
+                  class="matrix-cell"
+                  :class="{ filled: item.balls.includes(String(n - 1)) }"
                 ></span>
               </div>
+              <div class="matrix-totals">
+                <span class="matrix-label">出现</span>
+                <span v-for="n in 10" :key="n" class="matrix-total-num">{{ getCount(n - 1) }}</span>
+              </div>
             </div>
+            <div v-else class="no-data">暂无数据</div>
           </div>
         </div>
         
@@ -157,6 +160,14 @@ const posMatrix = computed(() => {
   }
   return matrix
 })
+
+const getCount = (num) => {
+  let count = 0
+  history.value.slice(0, showCount.value).forEach(item => {
+    if (item.balls?.includes(String(num))) count++
+  })
+  return count
+}
 
 const getBallColor = (ball) => {
   const num = parseInt(ball) || 0
@@ -408,7 +419,21 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 300px;
+}
+
+.matrix-cols {
+  display: flex;
+  padding-left: 45px;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.matrix-header-num {
+  width: 22px;
+  font-size: 0.65rem;
+  color: #999;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .matrix-row {
@@ -417,23 +442,10 @@ onMounted(() => {
   gap: 2px;
 }
 
-.matrix-row.header {
+.matrix-issue {
+  width: 45px;
   font-size: 0.65rem;
-  color: #999;
-}
-
-.matrix-label {
-  width: 40px;
-  font-size: 0.7rem;
   color: #666;
-  flex-shrink: 0;
-}
-
-.matrix-num {
-  width: 22px;
-  font-size: 0.65rem;
-  color: #999;
-  text-align: center;
   flex-shrink: 0;
 }
 
@@ -441,6 +453,35 @@ onMounted(() => {
   width: 22px;
   height: 22px;
   border-radius: 4px;
+  background: #f5f5f5;
+  flex-shrink: 0;
+}
+
+.matrix-cell.filled {
+  background: #e63946;
+}
+
+.matrix-totals {
+  display: flex;
+  padding-left: 45px;
+  gap: 2px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #eee;
+}
+
+.matrix-label {
+  width: 45px;
+  font-size: 0.65rem;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.matrix-total-num {
+  width: 22px;
+  font-size: 0.65rem;
+  color: #e63946;
+  text-align: center;
   flex-shrink: 0;
 }
 
