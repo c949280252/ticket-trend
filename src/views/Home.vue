@@ -255,11 +255,14 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  justify-content: space-between;
 }
 
 .trend-icon-item {
-  min-width: 50px;
-  height: 36px;
+  flex: 1;
+  min-width: 60px;
+  max-width: 80px;
+  height: 44px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -268,7 +271,7 @@ onUnmounted(() => {
 }
 
 .trend-icon-text {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
