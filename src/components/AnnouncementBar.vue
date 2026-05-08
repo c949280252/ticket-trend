@@ -17,8 +17,8 @@ import axios from 'axios'
 
 const announcements = ref([])
 
-// 固定 60 秒滚动一次（慢速）
-const DURATION = 60
+// 固定 50 秒滚动一次
+const DURATION = 50
 
 onMounted(async () => {
   try {
@@ -57,7 +57,7 @@ onMounted(async () => {
 .marquee-content {
   display: inline-block;
   white-space: nowrap;
-  animation: marquee 60s linear infinite;
+  animation: marquee 50s linear infinite;
 }
 
 .announcement-text {
