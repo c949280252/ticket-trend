@@ -153,7 +153,9 @@ const freqListFinal = computed(() => {
   const data = history.value.slice(0, showCount.value)
   data.forEach(item => {
     (item.balls || []).forEach(ball => {
-      counts[ball] = (counts[ball] || 0) + 1
+      // 统一使用数字，避免 "02" 和 "2" 分开统计
+      const n = parseInt(ball)
+      counts[n] = (counts[n] || 0) + 1
     })
   })
   // 调试用
@@ -169,16 +171,9 @@ const freqListFinal = computed(() => {
   return list
 })
 
-const totalCountFinal = computed(() => {
-  console.log('total:', history.value.length, 'showCount:', showCount.value)
-  return history.value.length
-})
+const totalCountFinal = computed(() => history.value.length)
 
-const trendListFinal = computed(() => {
-  const list = history.value.slice(0, showCount.value).reverse()
-  console.log('trend:', list.length, 'first:', list[0]?.issue)
-  return list
-})
+const trendListFinal = computed(() => history.value.slice(0, showCount.value).reverse())
 
 // 网格矩阵数据
 const posMatrix = computed(() => {
@@ -201,14 +196,10 @@ const getCount = (num) => {
   const data = history.value.slice(0, showCount.value)
   data.forEach(item => {
     if (item.balls) {
-      // 转换为数字比较
       const ballCount = item.balls.filter(b => parseInt(b) === num).length
       count += ballCount
     }
   })
-  if (num === 2) {
-    console.log('getCount 2:', count, 'data:', data.length)
-  }
   return count
 }
 
