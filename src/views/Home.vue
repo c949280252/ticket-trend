@@ -1,27 +1,24 @@
 <template>
   <div class="home">
     <div class="container">
-      <!-- 趋势图 -->
-      <div class="trend-section">
-        <div class="section-header">
-          <h3 class="section-title">趋势图</h3>
-          <span class="section-more">更多 ></span>
-        </div>
-        <div class="trend-grid">
-          <div class="trend-card" v-for="item in lotteryList" :key="item.id" @click="goTrend(item.id)">
-            <div class="trend-icon" :style="{ background: item.color }">
-              <span>{{ item.name.charAt(0) }}</span>
-            </div>
-            <div class="trend-info">
-              <div class="trend-name">{{ item.name }}</div>
-              <div class="trend-label">查看趋势</div>
-            </div>
-            <div class="trend-arrow">></div>
+      <!-- 趋势图入口 -->
+      <div class="trend-entrance">
+        <span class="trend-label">趋势图</span>
+        <div class="trend-icons">
+          <div 
+            class="trend-icon-small" 
+            v-for="item in lotteryList" 
+            :key="item.id" 
+            :style="{ background: item.color }"
+            @click="goTrend(item.id)"
+            :title="item.name"
+          >
+            {{ item.name.charAt(0) }}
           </div>
         </div>
       </div>
 
-      <!-- 导航列表 -->
+      <!-- 全部彩种 -->
       <div class="nav-section">
         <div class="section-header">
           <h3 class="section-title">全部彩种</h3>
@@ -77,9 +74,9 @@ let timer = null
 
 // 热门推荐（基于彩种数据）
 const hotList = computed(() => {
-  return lotteryList.value.slice(0, 4).map((item, index) => ({
+  return lotteryList.value.map((item, index) => ({
     ...item,
-    color: ['#e63946', '#1a56a8', '#2d9cdb', '#f59e0b'][index % 4]
+    color: ['#e63946', '#1a56a8', '#2d9cdb', '#f59e0b', '#8b5cf6', '#22c55e', '#ec4899'][index % 7]
   }))
 })
 
@@ -90,7 +87,14 @@ const goTrend = (id) => {
 const fetchData = async () => {
   try {
     const res = await axios.get('/api/lottery')
-    lotteryList.value = res.data
+    // 排序：3D、排列三、排列五、七星彩、双色球、大乐透、七乐彩
+    const order = ['3d', 'pl3', 'plw', 'qxc', 'ssq', 'dlt', 'qlc']
+    const sorted = res.data.sort((a, b) => {
+      const ia = order.indexOf(a.id)
+      const ib = order.indexOf(b.id)
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib)
+    })
+    lotteryList.value = sorted
   } catch (e) {
     console.error(e)
   }
@@ -240,69 +244,40 @@ onUnmounted(() => {
   color: #999;
 }
 
-/* 趋势图 */
-.trend-section {
+/* 趋势图入口 */
+.trend-entrance {
   background: #fff;
   border-radius: 12px;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
-.trend-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-}
-
-.trend-card {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.trend-card:active {
-  background: #f0f0f0;
-}
-
-.trend-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 0.75rem;
-}
-
-.trend-icon span {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #fff;
-}
-
-.trend-info {
-  flex: 1;
-}
-
-.trend-name {
-  font-size: 0.95rem;
+.trend-label {
+  font-size: 0.9rem;
   font-weight: 600;
   color: #333;
 }
 
-.trend-label {
-  font-size: 0.7rem;
-  color: #999;
+.trend-icons {
+  display: flex;
+  gap: 0.4rem;
 }
 
-.trend-arrow {
-  color: #ccc;
-  font-size: 0.9rem;
+.trend-icon-small {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #fff;
+  cursor: pointer;
 }
 
 /* 导航 */
