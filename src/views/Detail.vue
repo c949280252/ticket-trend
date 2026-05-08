@@ -70,7 +70,7 @@
                   v-for="n in 10" 
                   :key="n" 
                   class="matrix-cell"
-                  :class="{ filled: item.balls.includes(String(n - 1)) }"
+                  :class="getCellClass(item.balls, n - 1)"
                 >{{ item.balls.includes(String(n - 1)) ? (n - 1) : '' }}</span>
               </div>
               <div class="matrix-totals">
@@ -183,6 +183,15 @@ const getCount = (num) => {
     if (item.balls?.includes(String(num))) count++
   })
   return count
+}
+
+const getCellClass = (balls, num) => {
+  if (!balls.includes(String(num))) return {}
+  // 统计这个数字出现次数
+  const count = balls.filter(b => b === String(num)).length
+  if (count === 3) return { filled: true, triple: true } // 三同号 - 绿色
+  if (count === 2) return { filled: true, double: true }  // 二同号 - 蓝色
+  return { filled: true }
 }
 
 const getBallColor = (ball) => {
@@ -494,6 +503,16 @@ onMounted(() => {
 
 .matrix-cell.filled {
   background: #e63946;
+  color: #fff;
+}
+
+.matrix-cell.double {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.matrix-cell.triple {
+  background: #22c55e;
   color: #fff;
 }
 
