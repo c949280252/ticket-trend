@@ -16,6 +16,11 @@ const routes = [
     component: Detail
   },
   {
+    path: '/trend/:id',
+    name: 'Trend',
+    component: Detail
+  },
+  {
     path: '/x7k9m2',
     name: 'AdminLogin',
     component: AdminLogin
