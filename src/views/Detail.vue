@@ -63,12 +63,12 @@
             <div class="trend-matrix" v-if="trendListFinal.length > 0">
               <div class="matrix-cols">
                 <span class="matrix-header-issue">期号</span>
-                <span v-for="n in maxBall" :key="n" class="matrix-header-num">{{ hasZero ? (n - 1) : n }}</span>
+                <span v-for="n in (hasZero ? maxBall + 1 : maxBall)" :key="n" class="matrix-header-num">{{ hasZero ? (n - 1) : n }}</span>
               </div>
               <div v-for="(item, idx) in trendListFinal" :key="item.issue" class="matrix-row">
                 <span class="matrix-issue">{{ item.issue }}</span>
                 <span 
-                  v-for="n in maxBall" 
+                  v-for="n in (hasZero ? maxBall + 1 : maxBall)" 
                   :key="n" 
                   class="matrix-cell"
                   :class="getCellClass(item.balls, hasZero ? (n - 1) : n)"
@@ -76,7 +76,7 @@
               </div>
               <div class="matrix-totals">
                 <span class="matrix-totals-label">出现</span>
-                <span v-for="n in maxBall" :key="n" class="matrix-total-num">{{ getCount(hasZero ? (n - 1) : n) }}</span>
+                <span v-for="n in (hasZero ? maxBall + 1 : maxBall)" :key="n" class="matrix-total-num">{{ getCount(hasZero ? (n - 1) : n) }}</span>
               </div>
             </div>
             <div v-else class="no-data">暂无数据</div>
