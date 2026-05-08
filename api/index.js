@@ -56,14 +56,32 @@ async function cleanupOldData() {
 async function getFromDB(lotteryType, limit = 30, offset = 0) {
   const config = LOTTERY_CONFIG[lotteryType]
   const codeLen = config?.codeLen || 10
-  const result = await sql`SELECT issue, code, draw_time, created_at FROM lottery_history WHERE lottery_type = ${lotteryType} ORDER BY issue DESC LIMIT ${limit} OFFSET ${offset}`
-  return result.rows.map(r => ({ issue: r.issue, balls: formatBalls(r.code, codeLen), date: r.draw_time, created_at: r.created_at }))
+  const result = await sql`SELECT id, issue, code, draw_time, created_at FROM lottery_history WHERE lottery_type = ${lotteryType} ORDER BY issue DESC LIMIT ${limit} OFFSET ${offset}`
+  
+  // 自动修复格式并返回
+  const rows = []
+  for (const r of result.rows) {
+    let code = r.code
+    // 自动修复格式
+    if (!code.includes(',')) {
+      const digits = code.replace(/,/g, '')
+      if (lotteryType === 'pl3' || lotteryType === '3d') {
+        code = digits.split('').join(',')
+      } else if (['ssq', 'dlt', 'qlc'].includes(lotteryType)) {
+        code = digits.split('').map(d => d.padStart(2, '0')).join(',')
+      }
+      // 修复数据库
+      await sql`UPDATE lottery_history SET code = ${code} WHERE id = ${r.id}`
+    }
+    rows.push({ issue: r.issue, balls: formatBalls(code, codeLen), date: r.draw_time, created_at: r.created_at })
+  }
+  return rows
 }
 
 // 批量获取所有彩种最新数据（一次查询）
 async function getAllLatestData() {
   const result = await sql`
-    SELECT t.* FROM (
+    SELECT id, t.* FROM (
       SELECT DISTINCT ON (lottery_type) lottery_type, issue, code, draw_time, created_at 
       FROM lottery_history 
       ORDER BY lottery_type, issue DESC
@@ -73,7 +91,19 @@ async function getAllLatestData() {
   for (const r of result.rows) {
     const config = LOTTERY_CONFIG[r.lottery_type]
     const codeLen = config?.codeLen || 10
-    map[r.lottery_type] = { issue: r.issue, balls: formatBalls(r.code, codeLen), date: r.draw_time, created_at: r.created_at }
+    let code = r.code
+    // 自动修复格式
+    if (!code.includes(',')) {
+      const digits = code.replace(/,/g, '')
+      if (r.lottery_type === 'pl3' || r.lottery_type === '3d') {
+        code = digits.split('').join(',')
+      } else if (['ssq', 'dlt', 'qlc'].includes(r.lottery_type)) {
+        code = digits.split('').map(d => d.padStart(2, '0')).join(',')
+      }
+      // 修复数据库
+      await sql`UPDATE lottery_history SET code = ${code} WHERE id = ${r.id}`
+    }
+    map[r.lottery_type] = { issue: r.issue, balls: formatBalls(code, codeLen), date: r.draw_time, created_at: r.created_at }
   }
   return map
 }
@@ -489,6 +519,6 @@ app.delete('/api/admin/announcements/:id', requireAuth, async (req, res) => {
 })
 
 // 启动时初始化
-initAdminSettings().then(migrateData).catch(console.error)
+initAdminSettings().catch(console.error)
 
 export default (req, res) => app(req, res)
