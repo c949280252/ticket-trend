@@ -19,24 +19,29 @@
         <div class="lottery-date">{{ formatDate(latest.date) }}</div>
       </div>
 
-      <!-- 趋势图 -->
+      <!-- 标签页 -->
       <div class="trend-section">
         <div class="trend-tabs">
           <span 
             class="trend-tab" 
-            :class="{ active: trendTab === 'freq' }"
-            @click="trendTab = 'freq'"
+            :class="{ active: currentTab === 'freq' }"
+            @click="currentTab = 'freq'"
           >号码频率</span>
           <span 
             class="trend-tab" 
-            :class="{ active: trendTab === 'trend' }"
-            @click="trendTab = 'trend'"
+            :class="{ active: currentTab === 'trend' }"
+            @click="currentTab = 'trend'"
           >开奖走势</span>
+          <span 
+            class="trend-tab" 
+            :class="{ active: currentTab === 'history' }"
+            @click="currentTab = 'history'"
+          >历史开奖</span>
         </div>
         
-        <!-- 号码频率 -->
-        <div class="trend-content" v-if="trendTab === 'freq'">
-          <div class="freq-chart">
+<!-- 号码频率 -->
+        <div class="trend-content" v-show="currentTab === 'freq'">
+          <div class="freq-chart" v-if="currentTab === 'freq'">
             <div class="freq-header">
               <span>号码出现频率（前{{ maxShow }}）</span>
               <span class="freq-total">共{{ totalCount }}期</span>
@@ -54,8 +59,8 @@
         </div>
         
         <!-- 开奖走势 -->
-        <div class="trend-content" v-if="trendTab === 'trend'">
-          <div class="trend-chart">
+        <div class="trend-content" v-show="currentTab === 'trend'">
+          <div class="trend-chart" v-if="currentTab === 'trend'">
             <div class="trend-header">
               <span>近{{ showCount }}期开奖走势</span>
             </div>
@@ -76,22 +81,21 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- 历史开奖 -->
-      <div class="history">
-        <h3 class="section-title">历史开奖</h3>
-        <div class="history-list">
-          <div v-for="item in history" :key="item.issue" class="history-item">
-            <span class="issue">第{{ item.issue }}期</span>
-            <div class="balls">
-              <span v-for="(ball, i) in item.balls" :key="i" class="ball-small">{{ ball }}</span>
+        
+        <!-- 历史开奖 -->
+        <div class="history" v-show="currentTab === 'history'">
+          <h3 class="section-title">历史开奖</h3>
+          <div class="history-list">
+            <div v-for="item in history" :key="item.issue" class="history-item">
+              <span class="issue">第{{ item.issue }}期</span>
+              <div class="balls">
+                <span v-for="(ball, i) in item.balls" :key="i" class="ball-small">{{ ball }}</span>
+              </div>
+              <span class="date">{{ typeof item.date === 'string' ? item.date.split('T')[0] : item.date }}</span>
             </div>
-            <span class="date">{{ typeof item.date === 'string' ? item.date.split('T')[0] : item.date }}</span>
           </div>
-        </div>
-        <div class="load-more" ref="loadMoreRef" v-if="hasMore">
-          {{ loading ? '加载中...' : '上滑加载更多' }}
+          <div class="load-more" ref="loadMoreRef" v-if="hasMore">
+            {{ loading ? '加载中...' : '上滑加载更多' }}
         </div>
       </div>
     </div>
@@ -99,25 +103,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
 const route = useRoute()
 const lotteryId = route.params.id
-const lotteryName = ref('')
-const latest = ref(null)
-const history = ref([])
-const prizes = ref([])
-const loading = ref(false)
-const hasMore = ref(true)
-const page = ref(1)
-const PAGE_SIZE = 20
-const loadMoreRef = ref(null)
-let timer = null
 
-// 趋势图
-const trendTab = ref('freq')
+// 标签页：根据路由判断默认打开哪个
+const currentTab = ref(route.path.startsWith('/trend/') ? 'freq' : 'history')
+
+// 监听路由变化
+watch(() => route.path, (path) => {
+  currentTab.value = path.startsWith('/trend/') ? 'freq' : 'history'
+})
+
 const codeLen = ref(7)  // 默认7位数
 const showCount = ref(10)   // 显示近10期
 const maxShow = ref(10)    // 显示前10个
