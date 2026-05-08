@@ -44,22 +44,22 @@
             <div class="trend-header">
               <span>近{{ showCount }}期开奖走势</span>
             </div>
-            <div class="trend-table" v-if="trendListFinal.length > 0">
-              <div class="trend-thead">
-                <span class="th-issue">期号</span>
-                <span v-for="i in codeLen" :key="i" class="th-pos">第{{ i }}位</span>
+            <div class="trend-matrix">
+              <div class="matrix-row header">
+                <span class="matrix-label"></span>
+                <span v-for="n in 10" :key="n" class="matrix-num">{{ n - 1 }}</span>
               </div>
-              <div 
-                v-for="item in trendListFinal" 
-                :key="item.issue" 
-                class="trend-row"
-                :style="{ background: item === trendListFinal[0] ? '#fff5f5' : 'transparent' }"
-              >
-                <span class="td-issue">{{ item.issue }}</span>
-                <span v-for="(ball, i) in item.balls" :key="i" class="td-ball" :style="{ background: getBallColor(ball) }">{{ ball }}</span>
+              <div v-for="pos in posMatrix" :key="pos.index" class="matrix-row">
+                <span class="matrix-label">第{{ pos.index }}位</span>
+                <span 
+                  v-for="n in 10" 
+                  :key="n" 
+                  class="matrix-cell" 
+                  :class="{ filled: pos.nums.includes(n - 1) }"
+                  :style="{ background: pos.nums.includes(n - 1) ? getBallColor(n - 1) : '#f5f5f5' }"
+                ></span>
               </div>
             </div>
-            <div v-else class="no-data">暂无数据</div>
           </div>
         </div>
         
@@ -142,30 +142,20 @@ const totalCountFinal = computed(() => history.value.length)
 
 const trendListFinal = computed(() => history.value.slice(0, showCount.value).reverse())
 
-// 按位置统计走势
-const posBalls = computed(() => {
+// 网格矩阵数据
+const posMatrix = computed(() => {
   const data = history.value.slice(0, showCount.value)
-  const posStats = []
+  const matrix = []
   
   for (let p = 0; p < codeLen.value; p++) {
-    const counts = {}
+    const nums = new Set()
     data.forEach(item => {
       const ball = item.balls?.[p]
-      if (ball) counts[ball] = (counts[ball] || 0) + 1
+      if (ball) nums.add(parseInt(ball))
     })
-    const list = Object.entries(counts).map(([num, count]) => ({ num, count })).sort((a, b) => a.num.localeCompare(b.num))
-    const max = list[0]?.count || 1
-    posStats.push({
-      index: p + 1,
-      balls: list.map(item => ({
-        num: item.num,
-        count: item.count,
-        opacity: Math.max(0.3, item.count / max),
-        color: getBallColor(item.num)
-      }))
-    })
+    matrix.push({ index: p + 1, nums: Array.from(nums) })
   }
-  return posStats
+  return matrix
 })
 
 const getBallColor = (ball) => {
@@ -403,10 +393,55 @@ onMounted(() => {
   text-align: right;
 }
 
-.trend-table {
+.trend-chart {
+  padding: 0.5rem 0;
   overflow-x: auto;
-  border: 1px solid #eee;
-  border-radius: 8px;
+}
+
+.trend-header {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.75rem;
+}
+
+.trend-matrix {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 300px;
+}
+
+.matrix-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.matrix-row.header {
+  font-size: 0.65rem;
+  color: #999;
+}
+
+.matrix-label {
+  width: 40px;
+  font-size: 0.7rem;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.matrix-num {
+  width: 22px;
+  font-size: 0.65rem;
+  color: #999;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.matrix-cell {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .trend-thead {
