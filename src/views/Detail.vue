@@ -204,18 +204,15 @@ const fetchData = async (reset = false) => {
   }
   loading.value = true
   try {
+    const limit = Math.max(showCount.value, PAGE_SIZE)
     const [infoRes, historyRes] = await Promise.all([
       axios.get(`/api/lottery/${lotteryId}`),
-      axios.get(`/api/lottery/${lotteryId}/history?limit=${PAGE_SIZE}&page=${page.value}`)
+      axios.get(`/api/lottery/${lotteryId}/history?limit=${limit}&page=1`)
     ])
     const data = infoRes.data
     lotteryName.value = data.name
     latest.value = data.latest
-    if (page.value === 1) {
-      history.value = historyRes.data
-    } else {
-      history.value = [...history.value, ...historyRes.data]
-    }
+    history.value = historyRes.data
     if (LOTTERY_CONFIG[lotteryId]) {
       codeLen.value = LOTTERY_CONFIG[lotteryId].len
     }
