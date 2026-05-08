@@ -45,19 +45,14 @@
 
     <!-- 底部信息 -->
     <div class="footer">
-      <div class="footer-content">
-        <div class="footer-logo">彩票开奖网</div>
-        <div class="footer-desc">专业彩票开奖数据查询平台</div>
-        <div class="footer-links">
-          <span>关于我们</span>
-          <span class="divider">|</span>
-          <span>联系我们</span>
-          <span class="divider">|</span>
-          <span>服务条款</span>
-        </div>
-        <div class="footer-copyright">
-          © 2024 彩票开奖网 · 鲁ICP备XXXXXXXX号
-        </div>
+      <div class="footer-links">
+        <a href="https://www.cwl.gov.cn" target="_blank">中国福利彩票</a>
+        <span class="divider">|</span>
+        <a href="https://www.sporttery.cn" target="_blank">中国体育彩票</a>
+        <span class="divider">|</span>
+        <a href="https://www.500.com" target="_blank">500彩票网</a>
+        <span class="divider">|</span>
+        <a href="https://www.zhcw.com" target="_blank">中华彩票网</a>
       </div>
     </div>
   </div>
@@ -350,42 +345,25 @@ onUnmounted(() => {
 
 /* 底部 */
 .footer {
-  background: #2d2d2d;
-  padding: 2rem 1rem;
+  background: #f5f7fa;
+  padding: 1rem;
   margin-top: 1rem;
   text-align: center;
-}
-
-.footer-logo {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #fff;
-  margin-bottom: 0.5rem;
-}
-
-.footer-desc {
-  font-size: 0.8rem;
-  color: #999;
-  margin-bottom: 1rem;
 }
 
 .footer-links {
   font-size: 0.8rem;
   color: #666;
-  margin-bottom: 1rem;
 }
 
-.footer-links span {
-  cursor: pointer;
+.footer-links a {
+  color: #1a56a8;
+  text-decoration: none;
 }
 
 .footer-links .divider {
   margin: 0 0.5rem;
-}
-
-.footer-copyright {
-  font-size: 0.7rem;
-  color: #555;
+  color: #ddd;
 }
 
 @media (max-width: 380px) {
