@@ -326,6 +326,24 @@ app.delete('/api/admin/lottery/:id', requireAuth, async (req, res) => {
   res.json({ ok: true })
 })
 
+// 修改密码
+app.put('/api/admin/password', requireAuth, async (req, res) => {
+  const { oldPassword, newPassword } = req.body
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ error: '缺少参数' })
+  }
+  // 验证旧密码
+  const valid = await verifyPassword(oldPassword)
+  if (!valid) {
+    return res.status(401).json({ error: '旧密码错误' })
+  }
+  // 生成新密码哈希
+  const salt = crypto.randomBytes(16).toString('hex')
+  const hash = crypto.pbkdf2Sync(newPassword, salt, 100000, 64, 'sha512').toString('hex')
+  await sql`UPDATE admin_settings SET value = ${salt + ':' + hash} WHERE key = 'password'`
+  res.json({ ok: true })
+})
+
 // 启动时初始化admin_settings
 initAdminSettings().catch(console.error)
 
