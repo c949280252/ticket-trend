@@ -12,34 +12,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
 const announcements = ref([])
-const contentRef = ref(null)
 
-const SPEED = 30 // 30px/秒
+// 固定 60 秒滚动一次（慢速）
+const DURATION = 60
 
 onMounted(async () => {
   try {
     const res = await axios.get('/api/announcements')
     announcements.value = res.data
-    
-    await nextTick()
-    setTimeout(calcDuration, 200)
   } catch (e) {
     // ignore
   }
 })
-
-function calcDuration() {
-  if (!contentRef.value) return
-  const width = contentRef.value.offsetWidth
-  if (width > 0) {
-    const duration = width / SPEED
-    contentRef.value.style.animationDuration = duration + 's'
-  }
-}
 </script>
 
 <style scoped>
@@ -69,7 +57,7 @@ function calcDuration() {
 .marquee-content {
   display: inline-block;
   white-space: nowrap;
-  animation: marquee 10s linear infinite;
+  animation: marquee 60s linear infinite;
 }
 
 .announcement-text {
