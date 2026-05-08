@@ -49,27 +49,25 @@ onMounted(async () => {
 .marquee-wrapper {
   flex: 1;
   overflow: hidden;
-  position: relative;
 }
 
 .marquee-content {
-  position: absolute;
-  left: 100%;
+  display: inline-block;
   white-space: nowrap;
-  animation: scroll-left 10s linear infinite;
+  animation: marquee 10s linear infinite;
 }
 
 .announcement-text {
   color: #fff;
-  padding-right: 4rem;
+  padding: 0 2rem;
 }
 
-@keyframes scroll-left {
+@keyframes marquee {
   0% {
-    left: 100%;
+    transform: translateX(100vw);
   }
   100% {
-    left: -100%;
+    transform: translateX(-100%);
   }
 }
 </style>
