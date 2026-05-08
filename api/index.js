@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import crypto from 'crypto'
 import { sql } from '@vercel/postgres'
 
 const app = express()
@@ -203,41 +204,75 @@ app.get('/api/lottery/:id/history', async (req, res) => {
 })
 
 // ========== 后台管理 ==========
-const ADMIN_PASSWORD = process.env.admin_password || 'admin123'
 
-// 生成简单token（实际项目用jwt）
-function makeToken(password, time) {
-  return Buffer.from(`${password}:${time}`).toString('base64')
+// 创建 admin_settings 表（如果不存在）
+async function initAdminSettings() {
+  await sql`CREATE TABLE IF NOT EXISTS admin_settings (
+    key VARCHAR(50) PRIMARY KEY,
+    value VARCHAR(255)
+  )`
+  // 检查是否已有密码，没有则创建默认密码的哈希
+  const existing = await sql`SELECT value FROM admin_settings WHERE key = 'password'`
+  if (existing.rows.length === 0) {
+    const salt = crypto.randomBytes(16).toString('hex')
+    const hash = crypto.pbkdf2Sync('ticket123', salt, 100000, 64, 'sha512').toString('hex')
+    await sql`INSERT INTO admin_settings (key, value) VALUES ('password', ${salt + ':' + hash})`
+  }
 }
 
-// 验证token
-function verifyToken(token) {
-  try {
-    const decoded = Buffer.from(token, 'base64').toString()
-    const [password, time] = decoded.split(':')
-    return password === ADMIN_PASSWORD && Date.now() - parseInt(time) < 86400000 // 24小时有效
-  } catch {
-    return false
-  }
+// 读取密码哈希
+async function getAdminHash() {
+  const result = await sql`SELECT value FROM admin_settings WHERE key = 'password'`
+  return result.rows[0]?.value || null
+}
+
+// 验证密码
+async function verifyPassword(inputPassword) {
+  const stored = await getAdminHash()
+  if (!stored) return false
+  const [salt, hash] = stored.split(':')
+  const inputHash = crypto.pbkdf2Sync(inputPassword, salt, 100000, 64, 'sha512').toString('hex')
+  return hash === inputHash
+}
+
+// 生成简单token（用密码原文，包含时间戳）
+function makeToken(password, time) {
+  return Buffer.from(`${password}:${time}`).toString('base64')
 }
 
 // 登录
 app.post('/api/admin/login', async (req, res) => {
   const { password } = req.body
-  if (password !== ADMIN_PASSWORD) {
+  const valid = await verifyPassword(password)
+  if (!valid) {
     return res.status(401).json({ error: '密码错误' })
   }
   const token = makeToken(password, Date.now())
   res.json({ ok: true, token })
 })
 
-// 后台中间件
-function requireAuth(req, res, next) {
+// 后台中间件（验证token中的密码）
+async function requireAuth(req, res, next) {
   const token = req.headers.authorization
-  if (!token || !verifyToken(token)) {
+  if (!token) {
     return res.status(401).json({ error: '未授权' })
   }
-  next()
+  try {
+    const decoded = Buffer.from(token, 'base64').toString()
+    const [password, time] = decoded.split(':')
+    // 检查时间戳有效性
+    if (Date.now() - parseInt(time) >= 86400000) {
+      return res.status(401).json({ error: '登录已过期' })
+    }
+    // 验证密码
+    const valid = await verifyPassword(password)
+    if (!valid) {
+      return res.status(401).json({ error: '未授权' })
+    }
+    next()
+  } catch {
+    return res.status(401).json({ error: '未授权' })
+  }
 }
 
 // 后台列表
@@ -290,5 +325,8 @@ app.delete('/api/admin/lottery/:id', requireAuth, async (req, res) => {
   await sql`DELETE FROM lottery_history WHERE id = ${id}`
   res.json({ ok: true })
 })
+
+// 启动时初始化admin_settings
+initAdminSettings().catch(console.error)
 
 export default (req, res) => app(req, res)
