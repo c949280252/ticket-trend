@@ -318,7 +318,8 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 0.25rem;
   margin-right: 0.5rem;
-  max-width: 180px;
+  max-width: 150px;
+  justify-content: flex-end;
 }
 
 .arrow {
@@ -328,13 +329,13 @@ onUnmounted(() => {
 }
 
 .ball-small {
-  min-width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: bold;
   color: #fff;
   background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
@@ -343,6 +344,8 @@ onUnmounted(() => {
 .arrow {
   color: #ccc;
   font-size: 1rem;
+  flex-shrink: 0;
+  margin-left: 0.25rem;
 }
 
 /* 底部 */
