@@ -149,11 +149,15 @@ const hasZero = computed(() => {
 
 const freqListFinal = computed(() => {
   const counts = {}
-  history.value.slice(0, showCount.value).forEach(item => {
+  // 使用用户选择的期数
+  const data = history.value.slice(0, showCount.value)
+  data.forEach(item => {
     (item.balls || []).forEach(ball => {
       counts[ball] = (counts[ball] || 0) + 1
     })
   })
+  // 调试用
+  console.log('freq:', showCount.value, 'data:', data.length, 'counts:', counts)
   // 显示所有出现过的号码，不限制数量
   const list = Object.entries(counts).map(([num, count]) => ({ num, count, percent: 0 }))
     .sort((a, b) => b.count - a.count)
@@ -165,9 +169,16 @@ const freqListFinal = computed(() => {
   return list
 })
 
-const totalCountFinal = computed(() => history.value.length)
+const totalCountFinal = computed(() => {
+  console.log('total:', history.value.length, 'showCount:', showCount.value)
+  return history.value.length
+})
 
-const trendListFinal = computed(() => history.value.slice(0, showCount.value).reverse())
+const trendListFinal = computed(() => {
+  const list = history.value.slice(0, showCount.value).reverse()
+  console.log('trend:', list.length, 'first:', list[0]?.issue)
+  return list
+})
 
 // 网格矩阵数据
 const posMatrix = computed(() => {
@@ -187,13 +198,17 @@ const posMatrix = computed(() => {
 
 const getCount = (num) => {
   let count = 0
-  history.value.slice(0, showCount.value).forEach(item => {
+  const data = history.value.slice(0, showCount.value)
+  data.forEach(item => {
     if (item.balls) {
-      // 转换为数字比较，处理01和1的情况
+      // 转换为数字比较
       const ballCount = item.balls.filter(b => parseInt(b) === num).length
       count += ballCount
     }
   })
+  if (num === 2) {
+    console.log('getCount 2:', count, 'data:', data.length)
+  }
   return count
 }
 
