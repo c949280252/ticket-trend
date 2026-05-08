@@ -33,7 +33,6 @@ onMounted(async () => {
   padding: 0.4rem 0;
   display: flex;
   align-items: center;
-  overflow: hidden;
   font-size: 0.875rem;
   margin-bottom: 0;
 }
@@ -50,27 +49,27 @@ onMounted(async () => {
 .marquee-wrapper {
   flex: 1;
   overflow: hidden;
+  position: relative;
 }
 
 .marquee-content {
-  display: inline-flex;
+  position: absolute;
+  left: 100%;
   white-space: nowrap;
   animation: scroll-left 10s linear infinite;
-  will-change: transform;
 }
 
 .announcement-text {
   color: #fff;
-  padding: 0 2rem;
-  flex-shrink: 0;
+  padding-right: 4rem;
 }
 
 @keyframes scroll-left {
   0% {
-    transform: translateX(100%);
+    left: 100%;
   }
   100% {
-    transform: translateX(-100%);
+    left: -100%;
   }
 }
 </style>
