@@ -268,13 +268,16 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  padding: 0 0.5rem;
 }
 
 .trend-icon-text {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 导航 */
@@ -314,6 +317,10 @@ onUnmounted(() => {
   font-size: 1rem;
   font-weight: 600;
   color: #333;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-issue {
