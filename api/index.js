@@ -202,4 +202,93 @@ app.get('/api/lottery/:id/history', async (req, res) => {
   res.json(data)
 })
 
+// ========== 后台管理 ==========
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123'
+
+// 生成简单token（实际项目用jwt）
+function makeToken(password, time) {
+  return Buffer.from(`${password}:${time}`).toString('base64')
+}
+
+// 验证token
+function verifyToken(token) {
+  try {
+    const decoded = Buffer.from(token, 'base64').toString()
+    const [password, time] = decoded.split(':')
+    return password === ADMIN_PASSWORD && Date.now() - parseInt(time) < 86400000 // 24小时有效
+  } catch {
+    return false
+  }
+}
+
+// 登录
+app.post('/api/admin/login', async (req, res) => {
+  const { password } = req.body
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: '密码错误' })
+  }
+  const token = makeToken(password, Date.now())
+  res.json({ ok: true, token })
+})
+
+// 后台中间件
+function requireAuth(req, res, next) {
+  const token = req.headers.authorization
+  if (!token || !verifyToken(token)) {
+    return res.status(401).json({ error: '未授权' })
+  }
+  next()
+}
+
+// 后台列表
+app.get('/api/admin/lottery', requireAuth, async (req, res) => {
+  const { type, issue } = req.query
+  let sqlQuery = 'SELECT * FROM lottery_history WHERE 1=1'
+  const params = []
+  
+  if (type) {
+    params.push(type)
+    sqlQuery += ` AND lottery_type = $${params.length}`
+  }
+  if (issue) {
+    params.push(`%${issue}%`)
+    sqlQuery += ` AND issue LIKE $${params.length}`
+  }
+  sqlQuery += ' ORDER BY id DESC LIMIT 100'
+  
+  const result = await sql`${sqlQuery}`.catch(() => sql`SELECT * FROM lottery_history ORDER BY id DESC LIMIT 100`)
+  res.json(result.rows)
+})
+
+// 后台添加
+app.post('/api/admin/lottery', requireAuth, async (req, res) => {
+  const { lottery_type, issue, code, draw_time } = req.body
+  if (!lottery_type || !issue || !code) {
+    return res.status(400).json({ error: '缺少必要字段' })
+  }
+  
+  await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time, created_at)
+    VALUES (${lottery_type}, ${issue}, ${code}, ${draw_time || new Date()}, NOW())
+    ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
+  
+  res.json({ ok: true })
+})
+
+// 后台更新
+app.put('/api/admin/lottery/:id', requireAuth, async (req, res) => {
+  const { lottery_type, issue, code, draw_time } = req.body
+  const { id } = req.params
+  
+  await sql`UPDATE lottery_history SET lottery_type = ${lottery_type}, issue = ${issue}, code = ${code}, draw_time = ${draw_time} WHERE id = ${id}`
+  
+  res.json({ ok: true })
+})
+
+// 后台删除
+app.delete('/api/admin/lottery/:id', requireAuth, async (req, res) => {
+  const { id } = req.params
+  await sql`DELETE FROM lottery_history WHERE id = ${id}`
+  res.json({ ok: true })
+})
+
 export default (req, res) => app(req, res)
