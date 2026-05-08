@@ -255,28 +255,23 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  justify-content: space-between;
 }
 
 .trend-icon-item {
-  flex: 1;
-  min-width: 55px;
-  max-width: 90px;
   height: 44px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 0 0.25rem;
+  padding: 0 0.75rem;
 }
 
 .trend-icon-text {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
-  padding: 0 2px;
 }
 
 /* 导航 */
