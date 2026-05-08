@@ -150,18 +150,23 @@ const getBallColor = (ball) => {
 const fetchData = async (reset = false) => {
   if (reset) {
     page.value = 1
+    history.value = []
     hasMore.value = true
   }
   loading.value = true
   try {
     const [infoRes, historyRes] = await Promise.all([
       axios.get(`/api/lottery/${lotteryId}`),
-      axios.get(`/api/lottery/${lotteryId}/history?limit=50&page=1`)
+      axios.get(`/api/lottery/${lotteryId}/history?limit=${PAGE_SIZE}&page=${page.value}`)
     ])
     const data = infoRes.data
     lotteryName.value = data.name
     latest.value = data.latest
-    history.value = historyRes.data
+    if (page.value === 1) {
+      history.value = historyRes.data
+    } else {
+      history.value = [...history.value, ...historyRes.data]
+    }
     if (LOTTERY_CONFIG[lotteryId]) {
       codeLen.value = LOTTERY_CONFIG[lotteryId].len
     }

@@ -13,7 +13,7 @@
             @click="goTrend(item.id)"
             :title="item.name"
           >
-            {{ item.name.charAt(0) }}
+            {{ item.name }}
           </div>
         </div>
       </div>
@@ -267,16 +267,18 @@ onUnmounted(() => {
 }
 
 .trend-icon-small {
-  width: 28px;
+  width: auto;
+  min-width: 40px;
   height: 28px;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.6rem;
   font-weight: bold;
   color: #fff;
   cursor: pointer;
+  padding: 0 6px;
 }
 
 /* 导航 */
