@@ -418,19 +418,19 @@ onMounted(() => {
 .trend-matrix {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .matrix-cols {
   display: flex;
-  padding-left: 45px;
-  gap: 2px;
-  margin-bottom: 2px;
+  padding-left: 55px;
+  gap: 3px;
+  margin-bottom: 4px;
 }
 
 .matrix-header-num {
-  width: 22px;
-  font-size: 0.65rem;
+  width: 28px;
+  font-size: 0.75rem;
   color: #999;
   text-align: center;
   flex-shrink: 0;
@@ -439,21 +439,21 @@ onMounted(() => {
 .matrix-row {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
 }
 
 .matrix-issue {
-  width: 45px;
-  font-size: 0.65rem;
+  width: 55px;
+  font-size: 0.75rem;
   color: #666;
   flex-shrink: 0;
 }
 
 .matrix-cell {
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  background: #f5f5f5;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #f0f0f0;
   flex-shrink: 0;
 }
 
@@ -463,26 +463,27 @@ onMounted(() => {
 
 .matrix-totals {
   display: flex;
-  padding-left: 45px;
-  gap: 2px;
-  margin-top: 4px;
-  padding-top: 4px;
-  border-top: 1px solid #eee;
+  padding-left: 55px;
+  gap: 3px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #ddd;
 }
 
 .matrix-label {
-  width: 45px;
-  font-size: 0.65rem;
+  width: 55px;
+  font-size: 0.75rem;
   color: #999;
   flex-shrink: 0;
 }
 
 .matrix-total-num {
-  width: 22px;
-  font-size: 0.65rem;
+  width: 28px;
+  font-size: 0.8rem;
   color: #e63946;
   text-align: center;
   flex-shrink: 0;
+  font-weight: bold;
 }
 
 .trend-thead {
