@@ -9,7 +9,7 @@
           <span class="lottery-issue">第{{ latest.issue }}期</span>
         </div>
         <div class="balls">
-          <span v-for="(ball, index) in latest.balls" :key="index" class="ball">{{ ball }}</span>
+          <span v-for="(ball, index) in latest.balls" :key="index" class="ball-large">{{ ball }}</span>
         </div>
         <div class="lottery-date">{{ formatDate(latest.date) }}</div>
       </div>
@@ -270,7 +270,7 @@ onMounted(() => {
   margin-bottom: 1rem;
 }
 
-.ball {
+.ball, .ball-large {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -449,24 +449,31 @@ onMounted(() => {
 
 .issue {
   width: 80px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #666;
 }
 
 .date {
   margin-left: auto;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: #999;
 }
 
+.balls {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
 .ball-small {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: bold;
   color: #fff;
   background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
