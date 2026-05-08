@@ -9,7 +9,7 @@
             class="trend-icon-small" 
             v-for="item in lotteryList" 
             :key="item.id" 
-            :style="{ background: item.color }"
+            :style="{ background: item.color || '#e63946' }"
             @click="goTrend(item.id)"
             :title="item.name"
           >
@@ -84,11 +84,15 @@ const fetchData = async () => {
     const res = await axios.get('/api/lottery')
     // 排序：3D、排列三、排列五、七星彩、双色球、大乐透、七乐彩
     const order = ['3d', 'pl3', 'plw', 'qxc', 'ssq', 'dlt', 'qlc']
+    const colors = ['#e63946', '#f59e0b', '#1a56a8', '#22c55e', '#8b5cf6', '#ec4899', '#06b6d4']
     const sorted = res.data.sort((a, b) => {
       const ia = order.indexOf(a.id)
       const ib = order.indexOf(b.id)
       return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib)
-    })
+    }).map((item, index) => ({
+      ...item,
+      color: colors[index % colors.length]
+    }))
     lotteryList.value = sorted
   } catch (e) {
     console.error(e)
@@ -326,13 +330,13 @@ onUnmounted(() => {
 }
 
 .ball-small {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: bold;
   color: #fff;
   background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);

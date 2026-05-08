@@ -25,10 +25,10 @@
           <div class="freq-chart">
             <div class="freq-header">
               <span>号码出现频率（前{{ maxShow }}）</span>
-              <span class="freq-total">共{{ totalCount }}期</span>
+              <span class="freq-total">共{{ totalCountFinal }}期</span>
             </div>
             <div class="freq-bars">
-              <div v-for="item in freqList" :key="item.num" class="freq-item">
+              <div v-for="item in freqListFinal" :key="item.num" class="freq-item">
                 <span class="freq-num">{{ item.num }}</span>
                 <div class="freq-bar-wrapper">
                   <div class="freq-bar" :style="{ width: item.percent + '%', background: item.color }"></div>
@@ -49,7 +49,7 @@
                 <span class="trend-issue">期号</span>
                 <span v-for="i in codeLen" :key="i" class="trend-pos">第{{ i }}位</span>
               </div>
-              <div v-for="item in trendList" :key="item.issue" class="trend-row">
+              <div v-for="item in trendListFinal" :key="item.issue" class="trend-row">
                 <span class="trend-issue">{{ item.issue }}</span>
                 <span v-for="(ball, i) in item.balls" :key="i" class="trend-ball" :style="{ background: getBallColor(ball) }">{{ ball }}</span>
               </div>
@@ -115,9 +115,7 @@ const LOTTERY_CONFIG = {
   'qxc': { len: 7, max: 9 }
 }
 
-const totalCount = computed(() => history.value.length)
-
-const freqList = computed(() => {
+const freqListFinal = computed(() => {
   const counts = {}
   history.value.slice(0, 50).forEach(item => {
     (item.balls || []).forEach(ball => {
@@ -136,7 +134,7 @@ const freqList = computed(() => {
 
 const totalCountFinal = computed(() => history.value.length)
 
-const trendList = computed(() => history.value.slice(0, showCount.value).reverse())
+const trendListFinal = computed(() => history.value.slice(0, showCount.value).reverse())
 
 const getBallColor = (ball) => {
   const num = parseInt(ball) || 0
@@ -195,6 +193,17 @@ const formatDate = (date) => {
 
 onMounted(() => {
   fetchData()
+  
+  // 无限加载
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && hasMore.value && !loading.value) {
+      loadMore()
+    }
+  }, { threshold: 0.1 })
+  
+  if (loadMoreRef.value) {
+    observer.observe(loadMoreRef.value)
+  }
 })
 </script>
 
@@ -446,13 +455,13 @@ onMounted(() => {
 }
 
 .ball-small {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: bold;
   color: #fff;
   background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
