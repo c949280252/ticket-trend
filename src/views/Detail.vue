@@ -149,7 +149,7 @@ const hasZero = computed(() => {
 
 const freqListFinal = computed(() => {
   const counts = {}
-  history.value.slice(0, 50).forEach(item => {
+  history.value.slice(0, showCount.value).forEach(item => {
     (item.balls || []).forEach(ball => {
       counts[ball] = (counts[ball] || 0) + 1
     })
