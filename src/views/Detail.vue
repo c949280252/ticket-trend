@@ -139,7 +139,7 @@ const LOTTERY_CONFIG = {
   'qlc': { len: 7, max: 30, hasZero: false },
   'plw': { len: 5, max: 9, hasZero: true },
   'pl3': { len: 3, max: 9, hasZero: true },
-  'qxc': { len: 7, max: 9, hasZero: true }
+  'qxc': { len: 7, max: 14, hasZero: true }
 }
 
 // 是否包含0
