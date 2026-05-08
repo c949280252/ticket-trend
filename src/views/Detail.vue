@@ -114,7 +114,7 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 
 const route = useRoute()
-const lotteryId = route.params.id
+const lotteryId = computed(() => route.params.id)
 const lotteryName = ref('')
 const latest = ref(null)
 const history = ref([])
