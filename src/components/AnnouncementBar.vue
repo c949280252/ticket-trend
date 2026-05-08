@@ -55,7 +55,7 @@ onMounted(async () => {
 .marquee-content {
   display: inline-flex;
   white-space: nowrap;
-  animation: scroll-left 20s linear infinite;
+  animation: scroll-left 10s linear infinite;
   will-change: transform;
 }
 
