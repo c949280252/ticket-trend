@@ -255,6 +255,7 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  justify-content: space-between;
 }
 
 .trend-icon-item {
@@ -265,6 +266,7 @@ onUnmounted(() => {
   justify-content: center;
   cursor: pointer;
   padding: 0 0.75rem;
+  flex: 1;
 }
 
 .trend-icon-text {
@@ -315,11 +317,10 @@ onUnmounted(() => {
 
 .nav-balls {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.25rem;
   margin-right: 0.5rem;
-  max-width: 150px;
-  justify-content: flex-end;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
 .arrow {
