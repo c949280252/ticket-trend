@@ -129,8 +129,8 @@ watch(() => route.path, (path) => {
 
 const codeLen = ref(7)
 const showCount = ref(20)
-const maxShow = ref(10)
 const maxBall = ref(9)  // 最大号码
+const maxShow = ref(10)  // 频率图显示数量
 
 const LOTTERY_CONFIG = {
   '3d': { len: 3, max: 9, hasZero: true },
@@ -154,8 +154,9 @@ const freqListFinal = computed(() => {
       counts[ball] = (counts[ball] || 0) + 1
     })
   })
+  // 显示所有出现过的号码，不限制数量
   const list = Object.entries(counts).map(([num, count]) => ({ num, count, percent: 0 }))
-    .sort((a, b) => b.count - a.count).slice(0, maxShow.value)
+    .sort((a, b) => b.count - a.count)
   const max = list[0]?.count || 1
   list.forEach(item => {
     item.percent = (item.count / max) * 100
