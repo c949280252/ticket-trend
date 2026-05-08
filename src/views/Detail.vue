@@ -63,13 +63,13 @@
             <div class="trend-matrix" v-if="trendListFinal.length > 0">
               <div class="matrix-cols">
                 <span class="matrix-header-issue">期号</span>
-                <span v-for="n in 10" :key="n" class="matrix-header-num">{{ n - 1 }}</span>
+                <span v-for="n in maxBall + 1" :key="n" class="matrix-header-num">{{ n - 1 }}</span>
                 <span class="matrix-header-balls">开奖</span>
               </div>
               <div v-for="(item, idx) in trendListFinal" :key="item.issue" class="matrix-row">
                 <span class="matrix-issue">{{ item.issue.slice(-4) }}</span>
                 <span 
-                  v-for="n in 10" 
+                  v-for="n in maxBall + 1" 
                   :key="n" 
                   class="matrix-cell"
                   :class="getCellClass(item.balls, n - 1)"
@@ -80,7 +80,7 @@
               </div>
               <div class="matrix-totals">
                 <span class="matrix-totals-label">出现</span>
-                <span v-for="n in 10" :key="n" class="matrix-total-num">{{ getCount(n - 1) }}</span>
+                <span v-for="n in maxBall + 1" :key="n" class="matrix-total-num">{{ getCount(n - 1) }}</span>
                 <span class="matrix-totals-balls"></span>
               </div>
             </div>
@@ -135,11 +135,12 @@ watch(() => route.path, (path) => {
 const codeLen = ref(7)
 const showCount = ref(20)
 const maxShow = ref(10)
+const maxBall = ref(9)  // 最大号码
 
 const LOTTERY_CONFIG = {
   '3d': { len: 3, max: 9 },
-  'ssq': { len: 7, max: 33 },
-  'dlt': { len: 7, max: 35 },
+  'ssq': { len: 6, max: 33 },
+  'dlt': { len: 5, max: 35 },
   'qlc': { len: 7, max: 30 },
   'plw': { len: 5, max: 9 },
   'pl3': { len: 3, max: 9 },
@@ -187,7 +188,7 @@ const getCount = (num) => {
   let count = 0
   history.value.slice(0, showCount.value).forEach(item => {
     if (item.balls?.includes(String(num))) {
-      // 统计出现次数：普通+1，二同号+2，三同号+3
+      // 统计出现次数：普通+1，二同号+2，三同号+3，四次+4，五次+5，六次+6，七次+7
       const ballCount = item.balls.filter(b => b === String(num)).length
       count += ballCount
     }
@@ -198,6 +199,9 @@ const getCount = (num) => {
 const getCellClass = (balls, num) => {
   if (!balls.includes(String(num))) return {}
   const count = balls.filter(b => b === String(num)).length
+  if (count >= 6) return { filled: true, repeat6: true }
+  if (count >= 5) return { filled: true, repeat5: true }
+  if (count >= 4) return { filled: true, repeat4: true }
   if (count === 3) return { filled: true, triple: true }
   if (count === 2) return { filled: true, double: true }
   return { filled: true }
@@ -224,15 +228,16 @@ const fetchData = async (reset = false) => {
   try {
     const limit = Math.max(showCount.value, PAGE_SIZE)
     const [infoRes, historyRes] = await Promise.all([
-      axios.get(`/api/lottery/${lotteryId}`),
-      axios.get(`/api/lottery/${lotteryId}/history?limit=${limit}&page=1`)
+      axios.get(`/api/lottery/${lotteryId.value}`),
+      axios.get(`/api/lottery/${lotteryId.value}/history?limit=${limit}&page=1`)
     ])
     const data = infoRes.data
     lotteryName.value = data.name
     latest.value = data.latest
     history.value = historyRes.data
-    if (LOTTERY_CONFIG[lotteryId]) {
-      codeLen.value = LOTTERY_CONFIG[lotteryId].len
+    if (LOTTERY_CONFIG[lotteryId.value]) {
+      codeLen.value = LOTTERY_CONFIG[lotteryId.value].len
+      maxBall.value = LOTTERY_CONFIG[lotteryId.value].max
     }
     prizes.value = data.latest?.prize || []
     hasMore.value = historyRes.data.length === PAGE_SIZE
@@ -551,6 +556,21 @@ onMounted(() => {
 
 .matrix-cell.triple {
   background: #22c55e;
+  color: #fff;
+}
+
+.matrix-cell.repeat4 {
+  background: #8b5cf6;
+  color: #fff;
+}
+
+.matrix-cell.repeat5 {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.matrix-cell.repeat6 {
+  background: #06b6d4;
   color: #fff;
 }
 
