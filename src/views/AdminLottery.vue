@@ -257,17 +257,24 @@ const onLotteryTypeChange = async () => {
   try {
     const res = await axios.get(`/api/lottery/${form.lottery_type}`)
     if (res.data.latest?.date) {
-      // 直接从日期字符串提取时分（格式：2026-05-08T10:35:00.000Z）
+      // 直接从日期字符串提取时分（格式：2026-05-07T21:15:00.000Z）
       const dateStr = res.data.latest.date
       const match = dateStr.match(/T(\d{2}):(\d{2}):/)
       if (match) {
         const hour = parseInt(match[1])
         const minute = parseInt(match[2])
         
-        // 用今天的日期 + 最近开奖的时分
+        // 用今天的日期 + 最近开奖的时分（本地时间）
         const today = new Date()
         today.setHours(hour, minute, 0, 0)
-        form.draw_time = today.toISOString().slice(0, 16)
+        
+        // 格式化为 YYYY-MM-DDTHH:mm 本地时间
+        const year = today.getFullYear()
+        const month = String(today.getMonth() + 1).padStart(2, '0')
+        const day = String(today.getDate()).padStart(2, '0')
+        const h = String(today.getHours()).padStart(2, '0')
+        const m = String(today.getMinutes()).padStart(2, '0')
+        form.draw_time = `${year}-${month}-${day}T${h}:${m}`
         codeError.value = ''
         return
       }
@@ -281,7 +288,12 @@ const onLotteryTypeChange = async () => {
   const drawTime = LOTTERY_DRAW_TIME[form.lottery_type] || '21:00'
   const [hour, minute] = drawTime.split(':')
   today.setHours(parseInt(hour), parseInt(minute), 0, 0)
-  form.draw_time = today.toISOString().slice(0, 16)
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  const h = String(today.getHours()).padStart(2, '0')
+  const m = String(today.getMinutes()).padStart(2, '0')
+  form.draw_time = `${year}-${month}-${day}T${h}:${m}`
   codeError.value = ''
 }
 
