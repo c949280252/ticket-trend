@@ -66,7 +66,7 @@
                 <span v-for="n in maxBall + 1" :key="n" class="matrix-header-num">{{ n - 1 }}</span>
               </div>
               <div v-for="(item, idx) in trendListFinal" :key="item.issue" class="matrix-row">
-                <span class="matrix-issue">{{ String(item.issue).slice(-4) }}</span>
+                <span class="matrix-issue">{{ item.issue }}</span>
                 <span 
                   v-for="n in maxBall + 1" 
                   :key="n" 
