@@ -63,14 +63,14 @@ const history = ref([])
 const prizes = ref([])
 const loading = ref(false)
 const hasMore = ref(true)
-const offset = ref(0)
+const page = ref(1)
 const PAGE_SIZE = 20
 const loadMoreRef = ref(null)
 let timer = null
 
 const fetchData = async (reset = false) => {
   if (reset) {
-    offset.value = 0
+    page.value = 1
     hasMore.value = true
   }
   
@@ -78,12 +78,16 @@ const fetchData = async (reset = false) => {
   try {
     const [infoRes, historyRes] = await Promise.all([
       axios.get(`/api/lottery/${lotteryId}`),
-      axios.get(`/api/lottery/${lotteryId}/history?limit=${PAGE_SIZE}&offset=${offset.value}`)
+      axios.get(`/api/lottery/${lotteryId}/history?limit=${PAGE_SIZE}&page=${page.value}`)
     ])
     const data = infoRes.data
     lotteryName.value = data.name
     latest.value = data.latest
-    history.value = historyRes.data
+    if (page.value === 1) {
+      history.value = historyRes.data
+    } else {
+      history.value = [...history.value, ...historyRes.data]
+    }
     prizes.value = data.latest?.prize || []
     hasMore.value = historyRes.data.length === PAGE_SIZE
   } catch (e) {
@@ -95,9 +99,9 @@ const fetchData = async (reset = false) => {
 
 const loadMore = async () => {
   if (loading.value || !hasMore.value) return
-  offset.value += PAGE_SIZE
+  page.value++
   try {
-    const historyRes = await axios.get(`/api/lottery/${lotteryId}/history?limit=${PAGE_SIZE}&offset=${offset.value}`)
+    const historyRes = await axios.get(`/api/lottery/${lotteryId}/history?limit=${PAGE_SIZE}&page=${page.value}`)
     history.value = [...history.value, ...historyRes.data]
     hasMore.value = historyRes.data.length === PAGE_SIZE
   } catch (e) {

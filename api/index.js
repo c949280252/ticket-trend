@@ -199,10 +199,12 @@ app.get('/api/lottery/:id', async (req, res) => {
 // 历史记录 - 只返回数据，不触发更新
 app.get('/api/lottery/:id/history', async (req, res) => {
   const lotteryType = req.params.id
-  const { limit = 30, offset = 0 } = req.query
+  const { limit = 30, page = 1 } = req.query
+  const limitNum = parseInt(limit) || 30
+  const offsetNum = (parseInt(page) - 1) * limitNum
   if (!LOTTERY_CONFIG[lotteryType]) return res.status(404).json({ error: 'Not found' })
   
-  const data = await getFromDB(lotteryType, parseInt(limit) || 30, parseInt(offset) || 0)
+  const data = await getFromDB(lotteryType, limitNum, offsetNum)
   res.json(data)
 })
 
@@ -289,19 +291,15 @@ async function requireAuth(req, res, next) {
 app.get('/api/admin/lottery', requireAuth, async (req, res) => {
   const { type, issue, limit = 20, page = 1 } = req.query
   const limitNum = parseInt(limit) || 20
-  const pageNum = parseInt(page) || 1
-  const offsetNum = (pageNum - 1) * limitNum
+  const offsetNum = (parseInt(page) - 1) * limitNum
   
   let sqlQuery = 'SELECT * FROM lottery_history WHERE 1=1'
-  const params = []
   
   if (type) {
-    params.push(type)
-    sqlQuery += ` AND lottery_type = $${params.length}`
+    sqlQuery += ` AND lottery_type = '${type}'`
   }
   if (issue) {
-    params.push(`%${issue}%`)
-    sqlQuery += ` AND issue LIKE $${params.length}`
+    sqlQuery += ` AND issue LIKE '%${issue}%'`
   }
   sqlQuery += ` ORDER BY id DESC LIMIT ${limitNum} OFFSET ${offsetNum}`
   
@@ -316,9 +314,22 @@ app.post('/api/admin/lottery', requireAuth, async (req, res) => {
     return res.status(400).json({ error: '缺少必要字段' })
   }
   
+  // 禁止单独添加排列三
+  if (lottery_type === 'pl3') {
+    return res.status(400).json({ error: '请通过排列五添加' })
+  }
+  
   await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time, created_at)
     VALUES (${lottery_type}, ${issue}, ${code}, ${draw_time || new Date()}, NOW())
     ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
+  
+  // 如果是排列五，自动同步排列三
+  if (lottery_type === 'plw') {
+    const pl3Code = code.split(',').slice(0, 3).join(',')
+    await sql`INSERT INTO lottery_history (lottery_type, issue, code, draw_time, created_at)
+      VALUES ('pl3', ${issue}, ${pl3Code}, ${draw_time || new Date()}, NOW())
+      ON CONFLICT (lottery_type, issue) DO UPDATE SET code = EXCLUDED.code, draw_time = EXCLUDED.draw_time`
+  }
   
   res.json({ ok: true })
 })
@@ -328,7 +339,18 @@ app.put('/api/admin/lottery/:id', requireAuth, async (req, res) => {
   const { lottery_type, issue, code, draw_time } = req.body
   const { id } = req.params
   
+  // 禁止单独更新排列三
+  if (lottery_type === 'pl3') {
+    return res.status(400).json({ error: '请通过排列五更新' })
+  }
+  
   await sql`UPDATE lottery_history SET lottery_type = ${lottery_type}, issue = ${issue}, code = ${code}, draw_time = ${draw_time} WHERE id = ${id}`
+  
+  // 如果是排列五，自动同步排列三
+  if (lottery_type === 'plw') {
+    const pl3Code = code.split(',').slice(0, 3).join(',')
+    await sql`UPDATE lottery_history SET code = ${pl3Code}, draw_time = ${draw_time} WHERE lottery_type = 'pl3' AND issue = ${issue}`
+  }
   
   res.json({ ok: true })
 })

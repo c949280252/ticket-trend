@@ -18,7 +18,7 @@
         <div class="form-row">
           <select v-model="form.lottery_type" @change="onLotteryTypeChange">
             <option value="">选择彩种</option>
-            <option v-for="(config, key) in LOTTERY_CONFIG" :key="key" :value="key">
+            <option v-for="(config, key) in QUERY_CONFIG" :key="key" :value="key">
               {{ config.name }}
             </option>
           </select>
