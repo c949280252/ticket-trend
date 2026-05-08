@@ -71,7 +71,7 @@
                   :key="n" 
                   class="matrix-cell"
                   :class="{ filled: item.balls.includes(String(n - 1)) }"
-                ></span>
+                >{{ item.balls.includes(String(n - 1)) ? (n - 1) : '' }}</span>
               </div>
               <div class="matrix-totals">
                 <span class="matrix-totals-label">出现</span>
@@ -484,10 +484,17 @@ onMounted(() => {
   border-radius: 6px;
   background: #f0f0f0;
   flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .matrix-cell.filled {
   background: #e63946;
+  color: #fff;
 }
 
 .matrix-totals {
