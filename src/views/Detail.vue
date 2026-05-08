@@ -180,17 +180,20 @@ const posMatrix = computed(() => {
 const getCount = (num) => {
   let count = 0
   history.value.slice(0, showCount.value).forEach(item => {
-    if (item.balls?.includes(String(num))) count++
+    if (item.balls?.includes(String(num))) {
+      // 统计出现次数：普通+1，二同号+2，三同号+3
+      const ballCount = item.balls.filter(b => b === String(num)).length
+      count += ballCount
+    }
   })
   return count
 }
 
 const getCellClass = (balls, num) => {
   if (!balls.includes(String(num))) return {}
-  // 统计这个数字出现次数
   const count = balls.filter(b => b === String(num)).length
-  if (count === 3) return { filled: true, triple: true } // 三同号 - 绿色
-  if (count === 2) return { filled: true, double: true }  // 二同号 - 蓝色
+  if (count === 3) return { filled: true, triple: true }
+  if (count === 2) return { filled: true, double: true }
   return { filled: true }
 }
 
@@ -522,7 +525,6 @@ onMounted(() => {
   gap: 3px;
   margin-top: 6px;
   padding-top: 6px;
-  padding-right: 28px;
   border-top: 1px solid #ddd;
   justify-content: flex-start;
 }

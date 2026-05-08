@@ -3,17 +3,16 @@
     <div class="container">
       <!-- 趋势图入口 -->
       <div class="trend-entrance">
-        <span class="trend-label">趋势图</span>
         <div class="trend-icons">
           <div 
-            class="trend-icon-small" 
+            class="trend-icon-item" 
             v-for="item in lotteryList" 
             :key="item.id" 
             :style="{ background: item.color || '#e63946' }"
             @click="goTrend(item.id)"
             :title="item.name"
           >
-            {{ item.name }}
+            <span class="trend-icon-text">{{ item.name }}</span>
           </div>
         </div>
       </div>
@@ -247,38 +246,32 @@ onUnmounted(() => {
 .trend-entrance {
   background: #fff;
   border-radius: 12px;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem;
   margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-
-.trend-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #333;
 }
 
 .trend-icons {
   display: flex;
-  gap: 0.4rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.trend-icon-small {
-  width: auto;
-  min-width: 40px;
-  height: 28px;
-  border-radius: 6px;
+.trend-icon-item {
+  min-width: 50px;
+  height: 36px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.6rem;
-  font-weight: bold;
-  color: #fff;
   cursor: pointer;
-  padding: 0 6px;
+}
+
+.trend-icon-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
 }
 
 /* 导航 */
