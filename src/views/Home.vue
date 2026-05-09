@@ -340,6 +340,7 @@ onUnmounted(() => {
   font-weight: bold;
   color: #fff;
   background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
+  flex-shrink: 0;
 }
 
 .arrow {
