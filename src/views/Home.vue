@@ -298,8 +298,6 @@ onUnmounted(() => {
 
 .nav-info {
   min-width: 0;
-  flex: 1;
-  max-width: 70px;
 }
 
 .nav-name {
