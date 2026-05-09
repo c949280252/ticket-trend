@@ -320,11 +320,13 @@ onUnmounted(() => {
   gap: 0.25rem;
   margin-right: 0.5rem;
   flex-wrap: nowrap;
+  min-width: 100px;
 }
 
-@media (max-width: 380px) {
+@media (max-width: 360px) {
   .nav-balls {
     flex-wrap: wrap;
+    min-width: auto;
   }
 }
 
