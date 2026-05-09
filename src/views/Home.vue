@@ -290,7 +290,7 @@ onUnmounted(() => {
 
 .nav-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
@@ -299,6 +299,8 @@ onUnmounted(() => {
 .nav-info {
   min-width: 0;
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .nav-name {
