@@ -290,7 +290,7 @@ onUnmounted(() => {
 
 .nav-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
@@ -299,8 +299,7 @@ onUnmounted(() => {
 .nav-info {
   min-width: 0;
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  flex-shrink: 1;
 }
 
 .nav-name {
@@ -309,6 +308,8 @@ onUnmounted(() => {
   font-weight: 600;
   color: #333;
   white-space: nowrap;
+  min-width: 0;
+  flex: 1;
 }
 
 .nav-issue {
@@ -321,15 +322,8 @@ onUnmounted(() => {
   display: flex;
   gap: 0.25rem;
   margin-right: 0.5rem;
-  flex-wrap: nowrap;
-  min-width: 100px;
-}
-
-@media (max-width: 360px) {
-  .nav-balls {
-    flex-wrap: wrap;
-    min-width: auto;
-  }
+  flex-wrap: wrap;
+  max-width: 150px;
 }
 
 .arrow {
