@@ -308,8 +308,6 @@ onUnmounted(() => {
   font-weight: 600;
   color: #333;
   white-space: nowrap;
-  min-width: 0;
-  flex: 1;
 }
 
 .nav-issue {
