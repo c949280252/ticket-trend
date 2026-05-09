@@ -323,7 +323,6 @@ onUnmounted(() => {
   gap: 0.25rem;
   margin-right: 0.5rem;
   flex-wrap: wrap;
-  max-width: 150px;
 }
 
 .arrow {
