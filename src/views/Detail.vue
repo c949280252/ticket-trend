@@ -694,9 +694,10 @@ onMounted(() => {
 }
 
 .issue {
-  width: 80px;
+  min-width: 80px;
   font-size: 0.85rem;
   color: #666;
+  white-space: nowrap;
 }
 
 .date {
